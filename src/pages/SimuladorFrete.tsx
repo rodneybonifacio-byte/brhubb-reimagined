@@ -2,8 +2,42 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Calculator, User } from "lucide-react";
+import { Calculator, User, MapPin } from "lucide-react";
 import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+const origens = [
+  {
+    id: 1,
+    nome: "FINANCEIRO BRHUB",
+    endereco: "Rua Laurindo Sbampato, 461, CASA, Vila Guilherme, São Paulo/SP",
+    cep: "02055-000"
+  },
+  {
+    id: 2,
+    nome: "CD Norte",
+    endereco: "Av. das Nações, 1500, Galpão 3, Guarulhos/SP",
+    cep: "07123-456"
+  },
+  {
+    id: 3,
+    nome: "Filial RJ",
+    endereco: "Rua do Porto, 200, Centro, Rio de Janeiro/RJ",
+    cep: "20040-000"
+  },
+  {
+    id: 4,
+    nome: "CD Sul",
+    endereco: "Rua dos Pinheiros, 890, Curitiba/PR",
+    cep: "80420-100"
+  }
+];
 
 export default function SimuladorFrete() {
   const [cep, setCep] = useState("");
@@ -12,6 +46,8 @@ export default function SimuladorFrete() {
   const [comprimento, setComprimento] = useState("");
   const [peso, setPeso] = useState("");
   const [valorDeclarado, setValorDeclarado] = useState("");
+  const [origemSelecionada, setOrigemSelecionada] = useState(origens[0]);
+  const [modalOpen, setModalOpen] = useState(false);
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4">
@@ -27,18 +63,74 @@ export default function SimuladorFrete() {
       <Card className="border-none shadow-sm">
         <div className="p-6">
           {/* Origem */}
-          <div className="mb-6 rounded-lg border border-border bg-muted/30 p-4">
-            <div className="flex items-start gap-3">
-              <User className="mt-1 h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="font-semibold">Origem:</p>
-                <p className="text-sm font-medium">FINANCEIRO BRHUB</p>
-                <p className="text-sm text-muted-foreground">
-                  Rua Laurindo Sbampato, 461, CASA, Vila Guilherme, São Paulo/SP
-                </p>
+          <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+            <DialogTrigger asChild>
+              <div className="mb-6 cursor-pointer rounded-lg border border-border bg-muted/30 p-4 transition-colors hover:bg-muted/50">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <User className="mt-1 h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-semibold">Origem:</p>
+                      <p className="text-sm font-medium">{origemSelecionada.nome}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {origemSelecionada.endereco}
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-xs">
+                    Alterar
+                  </Button>
+                </div>
               </div>
-            </div>
-          </div>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Selecionar Origem</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                {origens.map((origem) => (
+                  <button
+                    key={origem.id}
+                    onClick={() => {
+                      setOrigemSelecionada(origem);
+                      setModalOpen(false);
+                    }}
+                    className={`w-full rounded-lg border p-4 text-left transition-all hover:border-primary hover:bg-accent ${
+                      origemSelecionada.id === origem.id
+                        ? "border-primary bg-accent"
+                        : "border-border"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <MapPin className="mt-1 h-5 w-5 text-primary" />
+                      <div className="flex-1">
+                        <p className="font-semibold">{origem.nome}</p>
+                        <p className="text-sm text-muted-foreground">{origem.endereco}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">CEP: {origem.cep}</p>
+                      </div>
+                      {origemSelecionada.id === origem.id && (
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary">
+                          <svg
+                            className="h-4 w-4 text-primary-foreground"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* CEP */}
           <div className="mb-6">
