@@ -53,41 +53,13 @@ export default function SimuladorFrete() {
       try {
         setLoadingOrigens(true);
         
-        // Buscar endereço principal e remetentes em paralelo
-        const [enderecoPrincipal, remetentesData] = await Promise.all([
-          clientes.getEnderecoPrincipal().catch((error) => {
-            console.error("Erro ao buscar endereço principal:", error);
-            return null;
-          }),
-          remetentes.listar().catch((error) => {
-            console.error("Erro ao buscar remetentes:", error);
-            return { data: [] };
-          })
-        ]);
+        // Buscar remetentes primeiro (mais confiável)
+        const remetentesData = await remetentes.listar().catch((error) => {
+          console.error("Erro ao buscar remetentes:", error);
+          return { data: [] };
+        });
 
         const origensCarregadas: OrigemItem[] = [];
-
-        // Adicionar endereço principal como primeira opção
-        if (enderecoPrincipal) {
-          // A API pode retornar o endereço diretamente ou dentro de um objeto data
-          const endereco = enderecoPrincipal.data || enderecoPrincipal;
-          
-          const enderecoFormatado = [
-            endereco.logradouro,
-            endereco.numero,
-            endereco.complemento,
-            endereco.bairro,
-            `${endereco.localidade}/${endereco.uf}`
-          ].filter(Boolean).join(', ');
-
-          origensCarregadas.push({
-            id: "principal",
-            nome: "Endereço Principal",
-            endereco: enderecoFormatado,
-            cep: endereco.cep || "",
-            isPrincipal: true,
-          });
-        }
 
         // Adicionar remetentes
         if (remetentesData.data && remetentesData.data.length > 0) {
@@ -110,9 +82,36 @@ export default function SimuladorFrete() {
           });
         }
 
+        // Tentar adicionar endereço principal do cliente
+        try {
+          const enderecoPrincipal = await clientes.getEnderecoPrincipal();
+          
+          if (enderecoPrincipal && enderecoPrincipal.logradouro && enderecoPrincipal.localidade) {
+            const enderecoFormatado = [
+              enderecoPrincipal.logradouro,
+              enderecoPrincipal.numero,
+              enderecoPrincipal.complemento,
+              enderecoPrincipal.bairro,
+              `${enderecoPrincipal.localidade}/${enderecoPrincipal.uf}`
+            ].filter(Boolean).join(', ');
+
+            // Adicionar no início da lista se for válido
+            origensCarregadas.unshift({
+              id: "principal",
+              nome: "Endereço Principal",
+              endereco: enderecoFormatado,
+              cep: enderecoPrincipal.cep || "",
+              isPrincipal: true,
+            });
+          }
+        } catch (error) {
+          console.error("Erro ao buscar endereço principal:", error);
+          // Continua com apenas os remetentes
+        }
+
         setOrigens(origensCarregadas);
         
-        // Selecionar a primeira origem automaticamente
+        // Selecionar o primeiro endereço válido automaticamente
         if (origensCarregadas.length > 0) {
           setOrigemSelecionada(origensCarregadas[0]);
         } else {
