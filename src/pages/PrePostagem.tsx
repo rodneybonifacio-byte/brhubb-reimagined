@@ -196,7 +196,7 @@ export default function PrePostagem() {
                 <div className="flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono text-lg font-bold">
-                      {emissao.codigoRastreio || emissao.id}
+                      {emissao.codigoObjeto || emissao.id}
                     </span>
                     {getStatusBadge(emissao.status)}
                     {emissao.statusRastreio && (
@@ -227,7 +227,7 @@ export default function PrePostagem() {
                   <div className="flex flex-wrap gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Serviço: </span>
-                      <span className="font-medium">{emissao.nomeServico}</span>
+                      <span className="font-medium">{emissao.servico || emissao.nomeServico}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Transportadora: </span>
@@ -235,7 +235,7 @@ export default function PrePostagem() {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Valor: </span>
-                      <span className="font-medium">R$ {emissao.valorFrete}</span>
+                      <span className="font-medium">R$ {emissao.valor || emissao.valorFrete}</span>
                     </div>
                     {emissao.custoFrete && (
                       <div>

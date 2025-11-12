@@ -322,12 +322,14 @@ export interface EmissaoRequest {
 
 export interface EmissaoItem {
   id: string;
-  codigoRastreio?: string;
+  codigoObjeto?: string; // Código de rastreio real (ex: AB699429284BR)
   status: string;
   statusRastreio?: string;
-  nomeServico: string;
+  servico?: string; // Nome do serviço
+  nomeServico?: string; // Nome do serviço (compatibilidade)
   transportadora: string;
-  valorFrete: string;
+  valor?: string; // Valor do frete
+  valorFrete?: string; // Valor do frete (compatibilidade)
   custoFrete?: string;
   destinatario?: {
     nome: string;
@@ -337,6 +339,7 @@ export interface EmissaoItem {
     nome: string;
     empresa?: string;
   };
+  remetenteNome?: string; // Nome do remetente direto
   criadoEm: string;
   atualizadoEm?: string;
 }

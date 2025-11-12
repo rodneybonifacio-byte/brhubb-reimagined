@@ -134,7 +134,7 @@ export default function VisualizarEtiqueta() {
                 <div>
                   <p className="text-xs text-muted-foreground">Código de Rastreio</p>
                   <p className="font-mono text-sm font-bold">
-                    {emissaoData.codigoRastreio || emissaoId}
+                    {emissaoData.codigoObjeto || emissaoId}
                   </p>
                 </div>
               </div>
@@ -144,7 +144,7 @@ export default function VisualizarEtiqueta() {
               <div className="flex items-center gap-2">
                 <div>
                   <p className="text-xs text-muted-foreground">Serviço</p>
-                  <p className="text-sm font-medium">{emissaoData.nomeServico}</p>
+                  <p className="text-sm font-medium">{emissaoData.servico || emissaoData.nomeServico}</p>
                 </div>
               </div>
 
@@ -154,7 +154,7 @@ export default function VisualizarEtiqueta() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">Valor</p>
-                  <p className="text-sm font-bold text-primary">R$ {emissaoData.valorFrete}</p>
+                  <p className="text-sm font-bold text-primary">R$ {emissaoData.valor || emissaoData.valorFrete}</p>
                 </div>
               </div>
 
