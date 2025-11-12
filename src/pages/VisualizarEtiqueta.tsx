@@ -191,22 +191,32 @@ export default function VisualizarEtiqueta() {
 
         {/* PDF Viewer - Desktop */}
         <div className="hidden h-full md:block">
-          {!iframeError ? (
-            <iframe
-              src={urlEtiqueta}
-              className="h-full w-full border-0"
-              title="Etiqueta de Envio"
+          {!iframeError && !loading ? (
+            <object
+              data={urlEtiqueta}
+              type="application/pdf"
+              className="h-full w-full"
               onLoad={() => setLoading(false)}
-              onError={() => {
-                setLoading(false);
-                setIframeError(true);
-              }}
-            />
-          ) : (
+            >
+              <iframe
+                src={urlEtiqueta}
+                className="h-full w-full border-0"
+                title="Etiqueta de Envio"
+                onLoad={() => setLoading(false)}
+                onError={() => {
+                  setLoading(false);
+                  setIframeError(true);
+                }}
+              />
+            </object>
+          ) : !loading && iframeError ? (
             <div className="flex h-full items-center justify-center p-8">
               <Card className="max-w-md p-6 text-center">
                 <p className="mb-4 text-muted-foreground">
-                  Não foi possível carregar o PDF no navegador.
+                  Não foi possível carregar o PDF diretamente no navegador.
+                </p>
+                <p className="mb-6 text-sm text-muted-foreground">
+                  Use uma das opções abaixo para visualizar sua etiqueta:
                 </p>
                 <div className="space-y-3">
                   <Button onClick={handleBaixar} className="w-full">
@@ -223,48 +233,61 @@ export default function VisualizarEtiqueta() {
                 </div>
               </Card>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* PDF Viewer - Mobile */}
         <div className="md:hidden">
-          <div className="p-4">
-            {!iframeError ? (
+          <div className="p-4 space-y-4">
+            {!iframeError && !loading ? (
               <Card className="overflow-hidden">
-                <iframe
-                  src={urlEtiqueta}
-                  className="h-[70vh] w-full border-0"
-                  title="Etiqueta de Envio"
+                <object
+                  data={urlEtiqueta}
+                  type="application/pdf"
+                  className="h-[60vh] w-full"
                   onLoad={() => setLoading(false)}
-                  onError={() => {
-                    setLoading(false);
-                    setIframeError(true);
-                  }}
-                />
+                >
+                  <iframe
+                    src={urlEtiqueta}
+                    className="h-[60vh] w-full border-0"
+                    title="Etiqueta de Envio"
+                    onLoad={() => setLoading(false)}
+                    onError={() => {
+                      setLoading(false);
+                      setIframeError(true);
+                    }}
+                  />
+                </object>
               </Card>
             ) : null}
             
-            {/* Opções de visualização mobile */}
-            <div className="mt-4 space-y-3">
-              <p className="text-center text-sm text-muted-foreground">
-                {iframeError ? "PDF não pôde ser carregado." : "Use as opções abaixo para melhor visualização:"}
+            {/* Opções de visualização mobile - sempre visível */}
+            <div className="space-y-3">
+              <p className="text-center text-sm font-medium text-foreground">
+                {iframeError && !loading ? "PDF não pôde ser carregado. " : ""}
+                Opções de visualização:
               </p>
               <div className="grid gap-3">
                 <Button
-                  variant="outline"
                   onClick={handleBaixar}
                   className="w-full"
+                  size="lg"
                 >
                   <Download className="mr-2 h-5 w-5" />
                   Baixar PDF
                 </Button>
                 <Button
+                  variant="outline"
                   onClick={() => window.open(urlEtiqueta, '_blank')}
                   className="w-full"
+                  size="lg"
                 >
                   Abrir em Nova Aba
                 </Button>
               </div>
+              <p className="text-center text-xs text-muted-foreground">
+                Recomendamos baixar o PDF para melhor visualização em dispositivos móveis
+              </p>
             </div>
           </div>
         </div>
