@@ -21,7 +21,7 @@ export default function PrePostagem() {
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
-    <div className="space-y-6 px-4 md:mx-auto md:max-w-7xl md:px-0">
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4">
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -54,11 +54,11 @@ export default function PrePostagem() {
               />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="lg" className="h-11 rounded-full">
+              <Button variant="outline" size="lg" className="h-11 flex-1 rounded-full sm:flex-initial">
                 <Filter className="mr-2 h-5 w-5" />
                 Filtros
               </Button>
-              <Button variant="outline" size="lg" className="h-11 rounded-full">
+              <Button variant="outline" size="lg" className="h-11 flex-1 rounded-full sm:flex-initial">
                 <Download className="mr-2 h-5 w-5" />
                 Exportar
               </Button>
@@ -68,7 +68,7 @@ export default function PrePostagem() {
       </div>
 
       {/* Status Tabs */}
-      <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
+      <div className="-mx-4 overflow-x-auto px-4">
         <div className="flex gap-2 pb-2">
           {statusTabs.map((tab) => (
             <Button
@@ -97,12 +97,12 @@ export default function PrePostagem() {
 
       {/* Empty State */}
       <Card className="border-none shadow-sm">
-        <div className="flex min-h-[400px] flex-col items-center justify-center p-8 text-center">
-          <div className="mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-primary/10">
-            <Package2 className="h-16 w-16 text-primary" />
+        <div className="flex min-h-[400px] flex-col items-center justify-center p-4 text-center sm:p-8">
+          <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 sm:h-32 sm:w-32">
+            <Package2 className="h-12 w-12 text-primary sm:h-16 sm:w-16" />
           </div>
-          <h3 className="mb-2 text-2xl font-semibold">Nenhuma etiqueta encontrada</h3>
-          <p className="mb-8 max-w-md text-muted-foreground">
+          <h3 className="mb-2 text-xl font-semibold sm:text-2xl">Nenhuma etiqueta encontrada</h3>
+          <p className="mb-8 max-w-md text-sm text-muted-foreground sm:text-base">
             {activeTab === "todas" 
               ? "Comece criando sua primeira etiqueta de envio"
               : `Não há etiquetas com status "${statusTabs.find(t => t.value === activeTab)?.label}"`
@@ -111,7 +111,7 @@ export default function PrePostagem() {
           <Button
             onClick={() => navigate("/envios/nova")}
             size="lg"
-            className="h-12 rounded-full px-8 font-medium shadow-lg"
+            className="h-12 w-full rounded-full px-8 font-medium shadow-lg sm:w-auto"
           >
             <Plus className="mr-2 h-5 w-5" />
             Criar nova etiqueta
