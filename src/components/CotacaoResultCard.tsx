@@ -7,6 +7,7 @@ import rodonaves from "@/assets/rodonaves-logo.png";
 
 interface CotacaoResultCardProps {
   cotacao: CotacaoItem;
+  isSelected?: boolean;
 }
 
 const getLogoUrl = (nomeServico: string, transportadora: string): string => {
@@ -20,7 +21,7 @@ const getLogoUrl = (nomeServico: string, transportadora: string): string => {
   return correiosLogo;
 };
 
-export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
+export function CotacaoResultCard({ cotacao, isSelected = false }: CotacaoResultCardProps) {
   const logoUrl = getLogoUrl(cotacao.nomeServico, cotacao.transportadora);
   
   // Valor apresentado pela API já tem o acréscimo aplicado
@@ -35,7 +36,9 @@ export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
   const valorAcrescimo = valorComAcrescimo - valorReal;
   
   return (
-    <Card className="group relative overflow-hidden border-border transition-all hover:border-primary hover:shadow-xl animate-fade-in">
+    <Card className={`group relative overflow-hidden transition-all hover:border-primary hover:shadow-xl animate-fade-in ${
+      isSelected ? "border-primary border-2 shadow-xl ring-2 ring-primary/20" : "border-border"
+    }`}>
       {/* Badge de Acréscimo */}
       {acrescimoPercentual > 0 && (
         <div className="absolute right-2 top-2 z-10">
@@ -118,8 +121,8 @@ export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
         </div>
 
         {/* Botão */}
-        <Button className="w-full" variant="outline">
-          Selecionar
+        <Button className="w-full" variant={isSelected ? "default" : "outline"}>
+          {isSelected ? "Selecionado" : "Selecionar"}
         </Button>
       </div>
     </Card>
