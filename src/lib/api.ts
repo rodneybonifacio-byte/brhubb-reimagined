@@ -383,6 +383,26 @@ export const emissoes = {
     return response.json();
   },
 
+  obterPorId: async (id: string): Promise<EmissaoItem> => {
+    const token = auth.getToken();
+    
+    const response = await fetch(`${API_BASE_URL}/emissoes/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: "Erro ao buscar emissão" }));
+      throw new Error(error.message || error.error || "Erro ao buscar emissão");
+    }
+
+    const result = await response.json();
+    return result.data || result;
+  },
+
   listar: async (params?: {
     page?: number;
     limit?: number;
