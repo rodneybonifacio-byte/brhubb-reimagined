@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Calculator, User, MapPin, Search } from "lucide-react";
+import { Calculator, User, MapPin, Search, Loader2 } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,
@@ -11,6 +11,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { frete, CotacaoItem } from "@/lib/api";
+import { toast } from "sonner";
+import { CotacaoResultCard } from "@/components/CotacaoResultCard";
 
 const origens = [
   {
@@ -49,11 +52,54 @@ export default function SimuladorFrete() {
   const [origemSelecionada, setOrigemSelecionada] = useState(origens[0]);
   const [modalOpen, setModalOpen] = useState(false);
   const [buscaOrigem, setBuscaOrigem] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [cotacoes, setCotacoes] = useState<CotacaoItem[]>([]);
 
   const origensFiltradas = origens.filter((origem) =>
     origem.nome.toLowerCase().includes(buscaOrigem.toLowerCase()) ||
     origem.endereco.toLowerCase().includes(buscaOrigem.toLowerCase())
   );
+
+  const handleCalcularFrete = async () => {
+    // Validação
+    if (!cep || !altura || !largura || !comprimento || !peso) {
+      toast.error("Por favor, preencha todos os campos obrigatórios");
+      return;
+    }
+
+    setLoading(true);
+    setCotacoes([]);
+
+    try {
+      const response = await frete.cotacao({
+        cepOrigem: origemSelecionada.cep.replace("-", ""),
+        cepDestino: cep.replace("-", ""),
+        embalagem: {
+          altura,
+          largura,
+          comprimento,
+          peso,
+          diametro: "0",
+        },
+        logisticaReversa: "N",
+        valorDeclarado: parseFloat(valorDeclarado) || 0,
+        cpfCnpjLoja: "0355655109", // Pode ser dinâmico se necessário
+      });
+
+      setCotacoes(response.data);
+      
+      if (response.data.length === 0) {
+        toast.info("Nenhuma cotação disponível para os dados informados");
+      } else {
+        toast.success(`${response.data.length} opção${response.data.length > 1 ? 'ões' : ''} de frete encontrada${response.data.length > 1 ? 's' : ''}`);
+      }
+    } catch (error) {
+      console.error("Erro ao calcular frete:", error);
+      toast.error(error instanceof Error ? error.message : "Erro ao calcular frete");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4">
@@ -237,27 +283,63 @@ export default function SimuladorFrete() {
         </div>
       </Card>
 
-      {/* Empty State */}
-      <Card className="border-none shadow-sm">
-        <div className="flex min-h-[300px] flex-col items-center justify-center p-4 text-center sm:p-8">
-          <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-muted sm:h-32 sm:w-32">
-            <Calculator className="h-12 w-12 text-muted-foreground sm:h-16 sm:w-16" />
+      {/* Results or Empty State */}
+      {loading ? (
+        <Card className="border-none shadow-sm">
+          <div className="flex min-h-[300px] flex-col items-center justify-center p-4 text-center sm:p-8">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <h3 className="mt-6 text-xl font-semibold sm:text-2xl">Calculando opções de frete...</h3>
+            <p className="mt-2 max-w-md text-sm text-muted-foreground sm:text-base">
+              Aguarde enquanto buscamos as melhores opções para você
+            </p>
           </div>
-          <h3 className="mb-2 text-xl font-semibold sm:text-2xl">Nenhuma cotação disponível</h3>
-          <p className="max-w-md text-sm text-muted-foreground sm:text-base">
-            Preencha os dados acima e clique em calcular para ver as opções de frete disponíveis
-          </p>
+        </Card>
+      ) : cotacoes.length > 0 ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">
+              {cotacoes.length} opção{cotacoes.length > 1 ? 'ões' : ''} encontrada{cotacoes.length > 1 ? 's' : ''}
+            </h2>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {cotacoes.map((cotacao, index) => (
+              <CotacaoResultCard key={`${cotacao.idLote}-${index}`} cotacao={cotacao} />
+            ))}
+          </div>
         </div>
-      </Card>
+      ) : (
+        <Card className="border-none shadow-sm">
+          <div className="flex min-h-[300px] flex-col items-center justify-center p-4 text-center sm:p-8">
+            <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-muted sm:h-32 sm:w-32">
+              <Calculator className="h-12 w-12 text-muted-foreground sm:h-16 sm:w-16" />
+            </div>
+            <h3 className="mb-2 text-xl font-semibold sm:text-2xl">Nenhuma cotação disponível</h3>
+            <p className="max-w-md text-sm text-muted-foreground sm:text-base">
+              Preencha os dados acima e clique em calcular para ver as opções de frete disponíveis
+            </p>
+          </div>
+        </Card>
+      )}
 
       {/* Calculate Button - Fixed at bottom on mobile */}
       <div className="sticky bottom-4 z-10">
         <Button
           size="lg"
           className="h-14 w-full rounded-full font-semibold shadow-lg"
+          onClick={handleCalcularFrete}
+          disabled={loading}
         >
-          <Calculator className="mr-2 h-5 w-5" />
-          Calcular Frete
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Calculando...
+            </>
+          ) : (
+            <>
+              <Calculator className="mr-2 h-5 w-5" />
+              Calcular Frete
+            </>
+          )}
         </Button>
       </div>
     </div>

@@ -14,6 +14,43 @@ export interface LoginResponse {
   };
 }
 
+export interface CotacaoRequest {
+  cepOrigem: string;
+  cepDestino: string;
+  embalagem: {
+    altura: string;
+    largura: string;
+    comprimento: string;
+    peso: string;
+    diametro: string;
+  };
+  logisticaReversa: string;
+  valorDeclarado: number;
+  cpfCnpjLoja: string;
+}
+
+export interface CotacaoItem {
+  idLote: string;
+  codigoServico: string;
+  nomeServico: string;
+  preco: string;
+  prazo: number;
+  embalagem: {
+    peso: number;
+    comprimento: number;
+    altura: number;
+    largura: number;
+    diametro: number;
+  };
+  imagem: string;
+  transportadora: string;
+  isNotaFiscal: boolean;
+}
+
+export interface CotacaoResponse {
+  data: CotacaoItem[];
+}
+
 export const auth = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
     const response = await fetch(`${API_BASE_URL}/login`, {
@@ -46,5 +83,27 @@ export const auth = {
 
   isAuthenticated: (): boolean => {
     return !!localStorage.getItem("auth_token");
+  },
+};
+
+export const frete = {
+  cotacao: async (dados: CotacaoRequest): Promise<CotacaoResponse> => {
+    const token = auth.getToken();
+    
+    const response = await fetch(`${API_BASE_URL}/frete/cotacao`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(dados),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: "Erro ao calcular frete" }));
+      throw new Error(error.message || "Erro ao calcular frete");
+    }
+
+    return response.json();
   },
 };
