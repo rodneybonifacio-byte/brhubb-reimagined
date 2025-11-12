@@ -5,24 +5,22 @@ import {
   Home,
   Users,
   Package,
-  FileText,
   Truck,
+  DollarSign,
   Settings,
   Wrench,
-  DollarSign,
   Menu,
-  Search,
-  Moon,
-  Sun,
-  ChevronDown,
-  ChevronRight,
+  Bell,
+  User,
+  LogOut,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -31,159 +29,103 @@ interface MenuItem {
   title: string;
   url: string;
   icon: any;
-  submenu?: { title: string; url: string }[];
 }
 
 const menuItems: MenuItem[] = [
   { title: "Home", url: "/", icon: Home },
-  {
-    title: "Cadastros",
-    url: "/cadastros",
-    icon: Users,
-    submenu: [{ title: "Clientes", url: "/cadastros/clientes" }],
-  },
-  {
-    title: "Envios",
-    url: "/envios",
-    icon: Package,
-    submenu: [
-      { title: "Pré-Postagem", url: "/envios/pre-postagem" },
-      { title: "Nova Pré-Postagem", url: "/envios/nova" },
-      { title: "Integrações", url: "/envios/integracoes" },
-    ],
-  },
-  {
-    title: "Acompanhamento",
-    url: "/acompanhamento",
-    icon: Truck,
-    submenu: [
-      { title: "Envios", url: "/acompanhamento/envios" },
-      { title: "Coletas", url: "/acompanhamento/coletas" },
-    ],
-  },
-  {
-    title: "Financeiro",
-    url: "/financeiro",
-    icon: DollarSign,
-    submenu: [
-      { title: "Faturas a Receber", url: "/financeiro/faturas" },
-      { title: "Contas a Pagar", url: "/financeiro/contas-pagar" },
-    ],
-  },
-  {
-    title: "Configurações",
-    url: "/configuracoes",
-    icon: Settings,
-    submenu: [{ title: "Transportadoras", url: "/configuracoes/transportadoras" }],
-  },
-  {
-    title: "Ferramentas",
-    url: "/ferramentas",
-    icon: Wrench,
-    submenu: [
-      { title: "Imprimir Etiquetas", url: "/ferramentas/etiquetas" },
-      { title: "Manifestos", url: "/ferramentas/manifestos" },
-      { title: "Rastrear Pacote", url: "/ferramentas/rastrear" },
-      { title: "Simulador de Frete", url: "/ferramentas/simulador" },
-    ],
-  },
+  { title: "Etiquetas", url: "/envios/pre-postagem", icon: Package },
+  { title: "Rastreio", url: "/acompanhamento/envios", icon: Truck },
+  { title: "Financeiro", url: "/financeiro/faturas", icon: DollarSign },
+  { title: "Clientes", url: "/cadastros/clientes", icon: Users },
+  { title: "Ferramentas", url: "/ferramentas", icon: Wrench },
+  { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const location = useLocation();
-
-  const toggleMenu = (title: string) => {
-    setExpandedMenus((prev) =>
-      prev.includes(title) ? prev.filter((item) => item !== title) : [...prev, title]
-    );
-  };
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
-    document.documentElement.classList.toggle("dark");
-  };
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      {/* Sidebar */}
+      {/* Sidebar - Estilo SuperFrete */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 h-full w-64 border-r border-border bg-sidebar transition-transform duration-300 lg:translate-x-0",
+          "fixed left-0 top-0 z-40 flex h-full w-[200px] flex-col border-r border-border bg-card transition-transform duration-300 lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-16 items-center border-b border-border px-6">
-          <h1 className="text-2xl font-bold text-primary">BRHUB</h1>
+        {/* Logo */}
+        <div className="flex h-16 items-center justify-between border-b border-border px-4">
+          <h1 className="text-xl font-bold text-primary">BRHUB</h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
 
-        <nav className="space-y-1 p-4">
-          {menuItems.map((item) => (
-            <div key={item.title}>
-              {item.submenu ? (
-                <>
-                  <button
-                    onClick={() => toggleMenu(item.title)}
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  >
-                    <div className="flex items-center gap-3">
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
-                    </div>
-                    {expandedMenus.includes(item.title) ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </button>
-                  {expandedMenus.includes(item.title) && (
-                    <div className="ml-8 mt-1 space-y-1">
-                      {item.submenu.map((subItem) => (
-                        <NavLink
-                          key={subItem.url}
-                          to={subItem.url}
-                          className="block rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                          activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                        >
-                          {subItem.title}
-                        </NavLink>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <NavLink
-                  to={item.url}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.title}</span>
-                </NavLink>
-              )}
-            </div>
-          ))}
+        {/* Menu */}
+        <nav className="flex-1 space-y-1 p-3">
+          {menuItems.map((item) => {
+            const isActive = location.pathname === item.url;
+            return (
+              <NavLink
+                key={item.title}
+                to={item.url}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                )}
+              >
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <span>{item.title}</span>
+              </NavLink>
+            );
+          })}
         </nav>
 
-        <div className="absolute bottom-0 w-full border-t border-border bg-sidebar p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              FB
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium">FINANCEIRO BRHUB</p>
-              <p className="text-xs text-muted-foreground">Admin</p>
-            </div>
-          </div>
+        {/* User Section */}
+        <div className="border-t border-border p-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-accent">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                  FB
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <p className="truncate text-sm font-medium">Financeiro</p>
+                  <p className="truncate text-xs text-muted-foreground">Admin</p>
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                Configurações
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-64">
-        {/* Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-card px-4 lg:px-6">
+      <div className="flex-1 lg:ml-[200px]">
+        {/* Header - Mobile */}
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-card px-4">
           <Button
             variant="ghost"
             size="icon"
@@ -193,39 +135,16 @@ export function AppLayout() {
             <Menu className="h-5 w-5" />
           </Button>
 
-          <div className="flex flex-1 items-center gap-4">
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Buscar manifestos, entregas..."
-                className="pl-10"
-              />
-            </div>
-          </div>
+          <h1 className="flex-1 text-lg font-bold text-primary lg:hidden">BRHUB</h1>
 
-          <Button variant="ghost" size="icon" onClick={toggleTheme}>
-            {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-destructive" />
           </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
-                  FB
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Perfil</DropdownMenuItem>
-              <DropdownMenuItem>Configurações</DropdownMenuItem>
-              <DropdownMenuItem>Sair</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </header>
 
         {/* Page Content */}
-        <main className="p-4 lg:p-6">
+        <main className="min-h-[calc(100vh-3.5rem)] bg-muted/30 p-4 lg:p-6">
           <Outlet />
         </main>
       </div>
