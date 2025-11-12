@@ -130,6 +130,86 @@ export const auth = {
   },
 };
 
+export interface EnderecoCliente {
+  id: string;
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  localidade: string;
+  uf: string;
+}
+
+export interface RemetenteItem {
+  id: string;
+  nome: string;
+  cpfCnpj: string;
+  telefone: string;
+  email: string;
+  criadoEm: string;
+  endereco: EnderecoCliente;
+  transportadoraConfiguracoes: any[];
+}
+
+export interface RemetentesResponse {
+  data: RemetenteItem[];
+  meta: {
+    totalRecords: number;
+    totalPages: number;
+    currentPage: number;
+    nextPage: number | null;
+    prevPage: number | null;
+  };
+}
+
+export const clientes = {
+  getEnderecoPrincipal: async (): Promise<EnderecoCliente> => {
+    const token = auth.getToken();
+    const userData = auth.getUserData();
+    
+    if (!userData?.clienteId) {
+      throw new Error("Dados do usuário não encontrados. Faça login novamente.");
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/clientes/endereco/${userData.clienteId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: "Erro ao buscar endereço" }));
+      throw new Error(error.message || error.error || "Erro ao buscar endereço");
+    }
+
+    return response.json();
+  },
+};
+
+export const remetentes = {
+  listar: async (): Promise<RemetentesResponse> => {
+    const token = auth.getToken();
+    
+    const response = await fetch(`${API_BASE_URL}/remetentes`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: "Erro ao buscar remetentes" }));
+      throw new Error(error.message || error.error || "Erro ao buscar remetentes");
+    }
+
+    return response.json();
+  },
+};
+
 export const frete = {
   cotacao: async (dados: CotacaoRequest): Promise<CotacaoResponse> => {
     const token = auth.getToken();
