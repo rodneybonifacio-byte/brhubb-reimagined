@@ -23,6 +23,13 @@ interface OrigemItem {
   isPrincipal?: boolean;
 }
 
+interface EnderecoDestino {
+  logradouro: string;
+  bairro: string;
+  localidade: string;
+  uf: string;
+}
+
 export default function SimuladorFrete() {
   const [cep, setCep] = useState("");
   const [altura, setAltura] = useState("");
@@ -36,7 +43,9 @@ export default function SimuladorFrete() {
   const [buscaOrigem, setBuscaOrigem] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingOrigens, setLoadingOrigens] = useState(true);
+  const [loadingCep, setLoadingCep] = useState(false);
   const [cotacoes, setCotacoes] = useState<CotacaoItem[]>([]);
+  const [enderecoDestino, setEnderecoDestino] = useState<EnderecoDestino | null>(null);
 
   // Carregar origens ao montar o componente
   useEffect(() => {
@@ -92,6 +101,71 @@ export default function SimuladorFrete() {
 
     carregarOrigens();
   }, []);
+
+  // Função para formatar CEP
+  const formatarCep = (valor: string) => {
+    const apenasNumeros = valor.replace(/\D/g, '');
+    if (apenasNumeros.length <= 5) {
+      return apenasNumeros;
+    }
+    return `${apenasNumeros.slice(0, 5)}-${apenasNumeros.slice(5, 8)}`;
+  };
+
+  // Função para buscar CEP
+  const buscarCep = async (cepValue: string) => {
+    const cepLimpo = cepValue.replace(/\D/g, '');
+    
+    // Validar se o CEP tem 8 dígitos
+    if (cepLimpo.length !== 8) {
+      return;
+    }
+
+    setLoadingCep(true);
+    setEnderecoDestino(null);
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+      
+      if (!response.ok) {
+        throw new Error("Erro ao buscar CEP");
+      }
+
+      const data = await response.json();
+
+      if (data.erro) {
+        toast.error("CEP não encontrado");
+        return;
+      }
+
+      setEnderecoDestino({
+        logradouro: data.logradouro || "",
+        bairro: data.bairro || "",
+        localidade: data.localidade || "",
+        uf: data.uf || "",
+      });
+
+      toast.success("CEP encontrado!");
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+      toast.error("Erro ao buscar CEP. Verifique o número informado.");
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
+  // Handler para mudança no CEP
+  const handleCepChange = (valor: string) => {
+    const cepFormatado = formatarCep(valor);
+    setCep(cepFormatado);
+
+    // Buscar automaticamente quando o CEP estiver completo
+    const cepLimpo = cepFormatado.replace(/\D/g, '');
+    if (cepLimpo.length === 8) {
+      buscarCep(cepFormatado);
+    } else {
+      setEnderecoDestino(null);
+    }
+  };
 
   const origensFiltradas = origens.filter((origem) =>
     origem.nome.toLowerCase().includes(buscaOrigem.toLowerCase()) ||
@@ -270,16 +344,36 @@ export default function SimuladorFrete() {
           </Dialog>
           )}
 
-          {/* CEP */}
+          {/* CEP Destino */}
           <div className="mb-6">
-            <Label htmlFor="cep" className="text-base">CEP</Label>
-            <Input
-              id="cep"
-              placeholder="00000-000"
-              value={cep}
-              onChange={(e) => setCep(e.target.value)}
-              className="mt-2 h-12 rounded-lg"
-            />
+            <Label htmlFor="cep" className="text-base">CEP de Destino</Label>
+            <div className="relative">
+              <Input
+                id="cep"
+                placeholder="00000-000"
+                value={cep}
+                onChange={(e) => handleCepChange(e.target.value)}
+                maxLength={9}
+                className="mt-2 h-12 rounded-lg"
+              />
+              {loadingCep && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              )}
+            </div>
+            {enderecoDestino && (
+              <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
+                <p className="text-sm font-medium text-foreground">
+                  {enderecoDestino.logradouro}
+                  {enderecoDestino.logradouro && enderecoDestino.bairro && " - "}
+                  {enderecoDestino.bairro}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {enderecoDestino.localidade}/{enderecoDestino.uf}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Dimensões */}
