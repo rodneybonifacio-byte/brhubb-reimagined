@@ -197,14 +197,14 @@ export default function NovaPrePostagem() {
         valorDeclarado: parseFloat(valorDeclarado) || 0,
       });
 
-      toast.success(`Etiqueta criada com sucesso! ID: ${response.id}`);
+      toast.success(`Etiqueta criada com sucesso!`);
       
-      // Abrir etiqueta em nova aba
+      // Navegar para página de visualização da etiqueta
       if (response.link_etiqueta) {
-        window.open(response.link_etiqueta, "_blank");
+        navigate(`/envios/visualizar?url=${encodeURIComponent(response.link_etiqueta)}&id=${response.id}`);
+      } else {
+        navigate("/envios/pre-postagem");
       }
-      
-      navigate("/envios/pre-postagem");
     } catch (error: any) {
       toast.error(error.message || "Erro ao criar etiqueta");
     } finally {

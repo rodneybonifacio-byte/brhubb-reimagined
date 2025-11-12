@@ -55,16 +55,19 @@ export default function PrePostagem() {
   };
 
   const handleImprimir = (emissao: EmissaoItem) => {
+    let url = "";
     if (emissao.transportadora === "CORREIOS") {
-      emissoes.imprimirEtiquetaCorreios(emissao.id);
+      url = emissoes.obterEtiquetaCorreiosPdf(emissao.id);
     } else {
-      emissoes.imprimirEtiqueta(emissao.id);
+      url = emissoes.obterEtiquetaPdf(emissao.id);
     }
+    navigate(`/envios/visualizar?url=${encodeURIComponent(url)}&id=${emissao.id}`);
   };
 
   const handleImprimirDeclaracao = (emissao: EmissaoItem) => {
     if (emissao.transportadora === "CORREIOS") {
-      emissoes.imprimirDeclaracaoCorreios(emissao.id);
+      const url = emissoes.obterDeclaracaoCorreiosPdf(emissao.id);
+      navigate(`/envios/visualizar?url=${encodeURIComponent(url)}&id=${emissao.id}`);
     }
   };
 
