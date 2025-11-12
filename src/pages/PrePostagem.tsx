@@ -21,12 +21,12 @@ export default function PrePostagem() {
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="space-y-6 px-4 md:mx-auto md:max-w-7xl md:px-0">
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Etiquetas de envio</h1>
+            <h1 className="text-2xl font-bold sm:text-3xl">Etiquetas de envio</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Gerencie e acompanhe todas as suas etiquetas
             </p>
@@ -34,7 +34,7 @@ export default function PrePostagem() {
           <Button
             onClick={() => navigate("/envios/nova")}
             size="lg"
-            className="h-12 rounded-full px-6 font-medium shadow-lg"
+            className="h-12 w-full rounded-full px-6 font-medium shadow-lg sm:w-auto"
           >
             <Plus className="mr-2 h-5 w-5" />
             Nova etiqueta
@@ -68,7 +68,7 @@ export default function PrePostagem() {
       </div>
 
       {/* Status Tabs */}
-      <div className="overflow-x-auto">
+      <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
         <div className="flex gap-2 pb-2">
           {statusTabs.map((tab) => (
             <Button
@@ -77,7 +77,7 @@ export default function PrePostagem() {
               size="lg"
               onClick={() => setActiveTab(tab.value)}
               className={cn(
-                "h-11 whitespace-nowrap rounded-full px-6 font-medium transition-all",
+                "h-11 flex-shrink-0 whitespace-nowrap rounded-full px-4 font-medium transition-all sm:px-6",
                 activeTab === tab.value && "shadow-md"
               )}
             >
