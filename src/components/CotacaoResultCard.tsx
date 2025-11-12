@@ -2,24 +2,37 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, Package, FileText } from "lucide-react";
 import { CotacaoItem } from "@/lib/api";
+import sedexLogo from "@/assets/sedex-logo.png";
+import sedexHojeLogo from "@/assets/sedex-hoje-logo.png";
+import pacLogo from "@/assets/pac-logo.png";
+import rodonaves from "@/assets/rodonaves-logo.png";
 
 interface CotacaoResultCardProps {
   cotacao: CotacaoItem;
 }
 
-const getLogoUrl = (imagem: string): string => {
-  const logos: Record<string, string> = {
-    correios: "https://logospng.org/download/correios/logo-correios-256.png",
-    rodonaves: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQcx3xLwfVE5xYYxN1YpO5m_XqxYdxNjXZhqw&s",
-    jadlog: "https://www.jadlog.com.br/assets/images/logo-jadlog.svg",
-    tnt: "https://www.tnt.com/etc.clientlibs/tnt/clientlibs/clientlib-site/resources/images/logo.svg",
-  };
+const getLogoUrl = (nomeServico: string, transportadora: string): string => {
+  const nomeNormalizado = nomeServico.toLowerCase();
+  const transportadoraNormalizada = transportadora.toLowerCase();
   
-  return logos[imagem.toLowerCase()] || "";
+  if (nomeNormalizado.includes('sedex hoje') || nomeNormalizado.includes('sedex_hoje')) {
+    return sedexHojeLogo;
+  }
+  if (nomeNormalizado.includes('sedex')) {
+    return sedexLogo;
+  }
+  if (nomeNormalizado.includes('pac')) {
+    return pacLogo;
+  }
+  if (transportadoraNormalizada.includes('rodonaves')) {
+    return rodonaves;
+  }
+  
+  return "";
 };
 
 export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
-  const logoUrl = getLogoUrl(cotacao.imagem);
+  const logoUrl = getLogoUrl(cotacao.nomeServico, cotacao.transportadora);
   
   return (
     <Card className="overflow-hidden border-border transition-all hover:border-primary hover:shadow-md">
