@@ -15,9 +15,7 @@ import { frete, CotacaoItem, clientes, remetentes, EnderecoCliente, RemetenteIte
 import { toast } from "sonner";
 import { CotacaoResultCard } from "@/components/CotacaoResultCard";
 import brhubLogo from "@/assets/brhub-logo.png";
-import sedexLogo from "@/assets/sedex-logo.png";
-import sedexHojeLogo from "@/assets/sedex-hoje-logo.png";
-import pacLogo from "@/assets/pac-logo.png";
+import correiosLogo from "@/assets/correios-logo.png";
 import rodonaves from "@/assets/rodonaves-logo.png";
 
 interface OrigemItem {
@@ -278,33 +276,19 @@ export default function SimuladorFrete() {
             </div>
             
             {/* Partner Logos */}
-            <div className="grid w-full grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-6">
-              <div className="flex items-center justify-center rounded-lg border border-border bg-background p-4 transition-all hover:border-primary/50 hover:shadow-md">
+            <div className="grid w-full grid-cols-2 gap-4 sm:gap-6">
+              <div className="flex items-center justify-center rounded-lg border border-border bg-background p-6 transition-all hover:border-primary/50 hover:shadow-md">
                 <img 
-                  src={sedexLogo} 
-                  alt="Sedex" 
-                  className="h-10 w-auto object-contain sm:h-12"
+                  src={correiosLogo} 
+                  alt="Correios" 
+                  className="h-16 w-auto object-contain sm:h-20"
                 />
               </div>
-              <div className="flex items-center justify-center rounded-lg border border-border bg-background p-4 transition-all hover:border-primary/50 hover:shadow-md">
-                <img 
-                  src={sedexHojeLogo} 
-                  alt="Sedex Hoje" 
-                  className="h-10 w-auto object-contain sm:h-12"
-                />
-              </div>
-              <div className="flex items-center justify-center rounded-lg border border-border bg-background p-4 transition-all hover:border-primary/50 hover:shadow-md">
-                <img 
-                  src={pacLogo} 
-                  alt="PAC" 
-                  className="h-10 w-auto object-contain sm:h-12"
-                />
-              </div>
-              <div className="flex items-center justify-center rounded-lg border border-border bg-background p-4 transition-all hover:border-primary/50 hover:shadow-md">
+              <div className="flex items-center justify-center rounded-lg border border-border bg-background p-6 transition-all hover:border-primary/50 hover:shadow-md">
                 <img 
                   src={rodonaves} 
                   alt="Rodonaves" 
-                  className="h-10 w-auto object-contain sm:h-12"
+                  className="h-16 w-auto object-contain sm:h-20"
                 />
               </div>
             </div>

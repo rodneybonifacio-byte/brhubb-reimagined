@@ -2,9 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, Package, FileText } from "lucide-react";
 import { CotacaoItem } from "@/lib/api";
-import sedexLogo from "@/assets/sedex-logo.png";
-import sedexHojeLogo from "@/assets/sedex-hoje-logo.png";
-import pacLogo from "@/assets/pac-logo.png";
+import correiosLogo from "@/assets/correios-logo.png";
 import rodonaves from "@/assets/rodonaves-logo.png";
 
 interface CotacaoResultCardProps {
@@ -12,23 +10,14 @@ interface CotacaoResultCardProps {
 }
 
 const getLogoUrl = (nomeServico: string, transportadora: string): string => {
-  const nomeNormalizado = nomeServico.toLowerCase();
   const transportadoraNormalizada = transportadora.toLowerCase();
   
-  if (nomeNormalizado.includes('sedex hoje') || nomeNormalizado.includes('sedex_hoje')) {
-    return sedexHojeLogo;
-  }
-  if (nomeNormalizado.includes('sedex')) {
-    return sedexLogo;
-  }
-  if (nomeNormalizado.includes('pac')) {
-    return pacLogo;
-  }
   if (transportadoraNormalizada.includes('rodonaves')) {
     return rodonaves;
   }
   
-  return "";
+  // Por padrão, usar logo dos Correios
+  return correiosLogo;
 };
 
 export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
@@ -39,12 +28,12 @@ export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
       <div className="p-5">
         <div className="mb-4 flex items-start justify-between gap-3">
           {/* Logo da Transportadora */}
-          <div className="flex h-16 w-24 items-center justify-center rounded-lg bg-muted/50">
+          <div className="flex h-20 w-32 items-center justify-center rounded-lg bg-muted/50 p-3">
             {logoUrl ? (
               <img
                 src={logoUrl}
                 alt={cotacao.transportadora}
-                className="max-h-12 max-w-full object-contain"
+                className="max-h-full max-w-full object-contain"
               />
             ) : (
               <span className="text-xs font-semibold text-muted-foreground">
