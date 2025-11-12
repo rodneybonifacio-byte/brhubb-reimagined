@@ -215,14 +215,19 @@ export const frete = {
     const token = auth.getToken();
     const userData = auth.getUserData();
     
-    if (!userData?.cpfCnpj) {
+    console.log("Dados do usuário para cotação:", userData);
+    
+    // Usar cpfCnpj ou clienteId como fallback
+    const cpfCnpjLoja = userData?.cpfCnpj || userData?.clienteId;
+    
+    if (!cpfCnpjLoja) {
       throw new Error("CPF/CNPJ não encontrado. Faça login novamente.");
     }
     
     // Usar o cpfCnpj do usuário logado
     const requestData = {
       ...dados,
-      cpfCnpjLoja: userData.cpfCnpj,
+      cpfCnpjLoja: cpfCnpjLoja,
     };
     
     const response = await fetch(`${API_BASE_URL}/frete/cotacao`, {
