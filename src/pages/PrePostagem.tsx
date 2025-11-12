@@ -195,7 +195,9 @@ export default function PrePostagem() {
               <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-lg font-bold">{emissao.codigoRastreio}</span>
+                    <span className="font-mono text-lg font-bold">
+                      {emissao.codigoRastreio || emissao.id}
+                    </span>
                     {getStatusBadge(emissao.status)}
                     {emissao.statusRastreio && (
                       <Badge variant="outline">{emissao.statusRastreio}</Badge>
@@ -203,19 +205,23 @@ export default function PrePostagem() {
                   </div>
                   
                   <div className="grid gap-2 sm:grid-cols-2">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Destinatário</p>
-                      <p className="font-medium">{emissao.destinatario.nome}</p>
-                      <p className="text-sm text-muted-foreground">{emissao.destinatario.cpfCnpj}</p>
-                    </div>
+                    {emissao.destinatario && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Destinatário</p>
+                        <p className="font-medium">{emissao.destinatario.nome}</p>
+                        <p className="text-sm text-muted-foreground">{emissao.destinatario.cpfCnpj}</p>
+                      </div>
+                    )}
                     
-                    <div>
-                      <p className="text-xs text-muted-foreground">Remetente</p>
-                      <p className="font-medium">{emissao.remetente.nome}</p>
-                      {emissao.remetente.empresa && (
-                        <p className="text-sm text-muted-foreground">{emissao.remetente.empresa}</p>
-                      )}
-                    </div>
+                    {emissao.remetente && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Remetente</p>
+                        <p className="font-medium">{emissao.remetente.nome}</p>
+                        {emissao.remetente.empresa && (
+                          <p className="text-sm text-muted-foreground">{emissao.remetente.empresa}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-4 text-sm">

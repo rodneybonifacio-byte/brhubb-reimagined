@@ -9,6 +9,7 @@ export default function VisualizarEtiqueta() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [iframeError, setIframeError] = useState(false);
   
   const urlEtiqueta = searchParams.get("url");
   const emissaoId = searchParams.get("id");
@@ -17,6 +18,13 @@ export default function VisualizarEtiqueta() {
     if (!urlEtiqueta) {
       setError(true);
       setLoading(false);
+    } else {
+      // Timeout para garantir que não fique loading infinito
+      const timeout = setTimeout(() => {
+        setLoading(false);
+      }, 10000);
+      
+      return () => clearTimeout(timeout);
     }
   }, [urlEtiqueta]);
 
@@ -104,38 +112,63 @@ export default function VisualizarEtiqueta() {
 
         {/* PDF Viewer - Desktop */}
         <div className="hidden h-full md:block">
-          <iframe
-            src={urlEtiqueta}
-            className="h-full w-full border-0"
-            title="Etiqueta de Envio"
-            onLoad={() => setLoading(false)}
-            onError={() => {
-              setLoading(false);
-              setError(true);
-            }}
-          />
+          {!iframeError ? (
+            <iframe
+              src={urlEtiqueta}
+              className="h-full w-full border-0"
+              title="Etiqueta de Envio"
+              onLoad={() => setLoading(false)}
+              onError={() => {
+                setLoading(false);
+                setIframeError(true);
+              }}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center p-8">
+              <Card className="max-w-md p-6 text-center">
+                <p className="mb-4 text-muted-foreground">
+                  Não foi possível carregar o PDF no navegador.
+                </p>
+                <div className="space-y-3">
+                  <Button onClick={handleBaixar} className="w-full">
+                    <Download className="mr-2 h-5 w-5" />
+                    Baixar PDF
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(urlEtiqueta, '_blank')}
+                    className="w-full"
+                  >
+                    Abrir em Nova Aba
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          )}
         </div>
 
         {/* PDF Viewer - Mobile */}
         <div className="md:hidden">
           <div className="p-4">
-            <Card className="overflow-hidden">
-              <iframe
-                src={urlEtiqueta}
-                className="h-[70vh] w-full border-0"
-                title="Etiqueta de Envio"
-                onLoad={() => setLoading(false)}
-                onError={() => {
-                  setLoading(false);
-                  setError(true);
-                }}
-              />
-            </Card>
+            {!iframeError ? (
+              <Card className="overflow-hidden">
+                <iframe
+                  src={urlEtiqueta}
+                  className="h-[70vh] w-full border-0"
+                  title="Etiqueta de Envio"
+                  onLoad={() => setLoading(false)}
+                  onError={() => {
+                    setLoading(false);
+                    setIframeError(true);
+                  }}
+                />
+              </Card>
+            ) : null}
             
-            {/* Fallback para mobile se iframe não funcionar bem */}
+            {/* Opções de visualização mobile */}
             <div className="mt-4 space-y-3">
               <p className="text-center text-sm text-muted-foreground">
-                Problemas para visualizar? Use as opções abaixo:
+                {iframeError ? "PDF não pôde ser carregado." : "Use as opções abaixo para melhor visualização:"}
               </p>
               <div className="grid gap-3">
                 <Button

@@ -322,18 +322,18 @@ export interface EmissaoRequest {
 
 export interface EmissaoItem {
   id: string;
-  codigoRastreio: string;
+  codigoRastreio?: string;
   status: string;
   statusRastreio?: string;
   nomeServico: string;
   transportadora: string;
   valorFrete: string;
   custoFrete?: string;
-  destinatario: {
+  destinatario?: {
     nome: string;
     cpfCnpj: string;
   };
-  remetente: {
+  remetente?: {
     nome: string;
     empresa?: string;
   };
