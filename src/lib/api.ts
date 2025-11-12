@@ -63,6 +63,9 @@ export interface CotacaoItem {
   nomeServico: string;
   preco: string;
   precoOriginal?: string;
+  precoBase?: string;
+  acrescimo?: number;
+  percentualAcrescimo?: number;
   desconto?: number;
   prazo: number;
   embalagem: {

@@ -22,22 +22,25 @@ const getLogoUrl = (nomeServico: string, transportadora: string): string => {
 
 export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
   const logoUrl = getLogoUrl(cotacao.nomeServico, cotacao.transportadora);
-  const precoFinal = parseFloat(cotacao.preco);
-  // Valor real é 100% a mais (dobro) do preço apresentado
-  const precoOriginal = precoFinal * 2;
-  const desconto = 50; // 50% de desconto fixo
-  const economia = precoOriginal - precoFinal;
+  
+  // Usar valores reais da tabela de acréscimo da API
+  const valorBase = parseFloat(cotacao.precoBase || cotacao.preco);
+  const valorComAcrescimo = parseFloat(cotacao.preco);
+  const acrescimoPercentual = cotacao.percentualAcrescimo || cotacao.acrescimo || 0;
+  const valorAcrescimo = valorComAcrescimo - valorBase;
   
   return (
     <Card className="group relative overflow-hidden border-border transition-all hover:border-primary hover:shadow-xl animate-fade-in">
-      {/* Badge de Desconto Black Friday */}
-      <div className="absolute right-2 top-2 z-10 animate-pulse">
-        <div className="rounded-lg bg-gradient-to-r from-black via-orange-600 to-black px-3 py-1 shadow-lg">
-          <p className="text-xs font-bold uppercase text-white">
-            🔥 {desconto}% OFF
-          </p>
+      {/* Badge de Acréscimo */}
+      {acrescimoPercentual > 0 && (
+        <div className="absolute right-2 top-2 z-10">
+          <div className="rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 px-3 py-1 shadow-lg">
+            <p className="text-xs font-bold uppercase text-white">
+              +{acrescimoPercentual}%
+            </p>
+          </div>
         </div>
-      </div>
+      )}
       
       <div className="p-5 pt-10">
         {/* Logo da Transportadora */}
@@ -67,20 +70,22 @@ export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
               Black Friday
             </p>
           </div>
-          <p className="mb-1 text-xs text-muted-foreground line-through">
-            De R$ {precoOriginal.toFixed(2)}
+          <p className="mb-1 text-xs text-muted-foreground">
+            De: R$ {valorBase.toFixed(2)}
           </p>
           <p className="mb-1 text-xs font-medium text-muted-foreground">
-            Por apenas
+            Para
           </p>
           <p className="mb-2 text-4xl font-black text-primary">
-            R$ {precoFinal.toFixed(2)}
+            R$ {valorComAcrescimo.toFixed(2)}
           </p>
-          <div className="inline-block rounded-full bg-green-600 px-4 py-1.5 shadow-md">
-            <p className="text-xs font-bold text-white">
-              💰 Economize R$ {economia.toFixed(2)}
-            </p>
-          </div>
+          {valorAcrescimo > 0 && (
+            <div className="inline-block rounded-full bg-orange-600 px-4 py-1.5 shadow-md">
+              <p className="text-xs font-bold text-white">
+                +R$ {valorAcrescimo.toFixed(2)} de acréscimo
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Informações */}
