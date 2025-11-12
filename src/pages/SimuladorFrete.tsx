@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Calculator, User, MapPin } from "lucide-react";
+import { Calculator, User, MapPin, Search } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,
@@ -48,6 +48,12 @@ export default function SimuladorFrete() {
   const [valorDeclarado, setValorDeclarado] = useState("");
   const [origemSelecionada, setOrigemSelecionada] = useState(origens[0]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [buscaOrigem, setBuscaOrigem] = useState("");
+
+  const origensFiltradas = origens.filter((origem) =>
+    origem.nome.toLowerCase().includes(buscaOrigem.toLowerCase()) ||
+    origem.endereco.toLowerCase().includes(buscaOrigem.toLowerCase())
+  );
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4">
@@ -87,8 +93,25 @@ export default function SimuladorFrete() {
               <DialogHeader>
                 <DialogTitle>Selecionar Origem</DialogTitle>
               </DialogHeader>
-              <div className="space-y-3">
-                {origens.map((origem) => (
+              
+              {/* Campo de Busca */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome ou endereço..."
+                  value={buscaOrigem}
+                  onChange={(e) => setBuscaOrigem(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              <div className="max-h-[400px] space-y-3 overflow-y-auto">
+                {origensFiltradas.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    Nenhuma origem encontrada
+                  </p>
+                ) : (
+                  origensFiltradas.map((origem) => (
                   <button
                     key={origem.id}
                     onClick={() => {
@@ -127,7 +150,8 @@ export default function SimuladorFrete() {
                       )}
                     </div>
                   </button>
-                ))}
+                  ))
+                )}
               </div>
             </DialogContent>
           </Dialog>
