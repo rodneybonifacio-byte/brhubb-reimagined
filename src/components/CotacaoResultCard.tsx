@@ -31,18 +31,18 @@ export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
   return (
     <Card className="relative overflow-hidden border-border transition-all hover:border-primary hover:shadow-lg">
       {/* Badge de Desconto */}
-      <div className="absolute right-0 top-0 z-10">
-        <div className="rounded-bl-lg bg-gradient-to-r from-orange-500 to-primary px-3 py-1.5 shadow-md">
+      <div className="absolute right-2 top-2 z-10">
+        <div className="rounded-lg bg-gradient-to-r from-orange-500 to-primary px-3 py-1 shadow-md">
           <p className="text-xs font-bold text-white">
             {desconto}% OFF
           </p>
         </div>
       </div>
       
-      <div className="p-5">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          {/* Logo da Transportadora */}
-          <div className="flex h-24 w-40 items-center justify-center rounded-lg bg-muted/50 p-3">
+      <div className="p-5 pt-10">
+        {/* Logo da Transportadora */}
+        <div className="mb-4 flex items-center justify-center">
+          <div className="flex h-20 w-full max-w-[200px] items-center justify-center rounded-lg bg-muted/50 p-3">
             {logoUrl ? (
               <img
                 src={logoUrl}
@@ -55,31 +55,29 @@ export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
               </span>
             )}
           </div>
-          
-          {/* Preço */}
-          <div className="text-right">
-            <div className="mb-1">
-              <p className="text-xs text-muted-foreground line-through">
-                De R$ {precoOriginal.toFixed(2)}
-              </p>
-            </div>
-            <p className="text-xs font-medium text-muted-foreground">
-              Por apenas
-            </p>
-            <p className="text-3xl font-bold text-primary">
-              R$ {precoFinal.toFixed(2)}
-            </p>
-            <p className="mt-1 text-xs font-semibold text-green-600">
-              Economia de R$ {economia.toFixed(2)}
-            </p>
-          </div>
+        </div>
+        
+        {/* Nome do Serviço */}
+        <h3 className="mb-3 text-center text-base font-semibold">{cotacao.nomeServico}</h3>
+        
+        {/* Preços */}
+        <div className="mb-4 rounded-lg bg-muted/30 p-4 text-center">
+          <p className="mb-1 text-xs text-muted-foreground line-through">
+            De R$ {precoOriginal.toFixed(2)}
+          </p>
+          <p className="mb-1 text-xs font-medium text-muted-foreground">
+            Por apenas
+          </p>
+          <p className="mb-2 text-3xl font-bold text-primary">
+            R$ {precoFinal.toFixed(2)}
+          </p>
+          <p className="inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-400">
+            Economize R$ {economia.toFixed(2)}
+          </p>
         </div>
 
-        {/* Nome do Serviço */}
-        <h3 className="mb-3 text-lg font-semibold">{cotacao.nomeServico}</h3>
-
         {/* Informações */}
-        <div className="mb-4 space-y-2">
+        <div className="mb-4 space-y-3">
           <div className="flex items-center gap-2 text-sm">
             <Clock className="h-4 w-4 text-muted-foreground" />
             <span className="text-muted-foreground">
