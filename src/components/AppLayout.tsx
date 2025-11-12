@@ -16,6 +16,7 @@ import {
   User,
   LogOut,
   X,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +37,8 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { title: "Home", url: "/", icon: Home },
   { title: "Etiquetas", url: "/envios/pre-postagem", icon: Package },
-  { title: "Rastreio", url: "/acompanhamento/envios", icon: Truck },
+  { title: "Rastreio", url: "/rastreio", icon: Search },
+  { title: "Acompanhamento", url: "/acompanhamento/envios", icon: Truck },
   { title: "Financeiro", url: "/financeiro/faturas", icon: DollarSign },
   { title: "Clientes", url: "/cadastros/clientes", icon: Users },
   { title: "Ferramentas", url: "/ferramentas", icon: Wrench },
