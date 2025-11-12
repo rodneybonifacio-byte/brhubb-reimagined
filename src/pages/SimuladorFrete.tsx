@@ -55,19 +55,36 @@ export default function SimuladorFrete() {
         
         // Buscar endereço principal e remetentes em paralelo
         const [enderecoPrincipal, remetentesData] = await Promise.all([
-          clientes.getEnderecoPrincipal().catch(() => null),
-          remetentes.listar().catch(() => ({ data: [] }))
+          clientes.getEnderecoPrincipal().catch((error) => {
+            console.error("Erro ao buscar endereço principal:", error);
+            return null;
+          }),
+          remetentes.listar().catch((error) => {
+            console.error("Erro ao buscar remetentes:", error);
+            return { data: [] };
+          })
         ]);
 
         const origensCarregadas: OrigemItem[] = [];
 
         // Adicionar endereço principal como primeira opção
         if (enderecoPrincipal) {
+          // A API pode retornar o endereço diretamente ou dentro de um objeto data
+          const endereco = enderecoPrincipal.data || enderecoPrincipal;
+          
+          const enderecoFormatado = [
+            endereco.logradouro,
+            endereco.numero,
+            endereco.complemento,
+            endereco.bairro,
+            `${endereco.localidade}/${endereco.uf}`
+          ].filter(Boolean).join(', ');
+
           origensCarregadas.push({
             id: "principal",
             nome: "Endereço Principal",
-            endereco: `${enderecoPrincipal.logradouro}, ${enderecoPrincipal.numero}${enderecoPrincipal.complemento ? ', ' + enderecoPrincipal.complemento : ''}, ${enderecoPrincipal.bairro}, ${enderecoPrincipal.localidade}/${enderecoPrincipal.uf}`,
-            cep: enderecoPrincipal.cep,
+            endereco: enderecoFormatado,
+            cep: endereco.cep || "",
             isPrincipal: true,
           });
         }
@@ -75,11 +92,19 @@ export default function SimuladorFrete() {
         // Adicionar remetentes
         if (remetentesData.data && remetentesData.data.length > 0) {
           remetentesData.data.forEach((remetente: RemetenteItem) => {
+            const enderecoFormatado = [
+              remetente.endereco.logradouro,
+              remetente.endereco.numero,
+              remetente.endereco.complemento,
+              remetente.endereco.bairro,
+              `${remetente.endereco.localidade}/${remetente.endereco.uf}`
+            ].filter(Boolean).join(', ');
+
             origensCarregadas.push({
               id: remetente.id,
               nome: remetente.nome,
-              endereco: `${remetente.endereco.logradouro}, ${remetente.endereco.numero}${remetente.endereco.complemento ? ', ' + remetente.endereco.complemento : ''}, ${remetente.endereco.bairro}, ${remetente.endereco.localidade}/${remetente.endereco.uf}`,
-              cep: remetente.endereco.cep,
+              endereco: enderecoFormatado,
+              cep: remetente.endereco.cep || "",
               isPrincipal: false,
             });
           });
@@ -90,6 +115,8 @@ export default function SimuladorFrete() {
         // Selecionar a primeira origem automaticamente
         if (origensCarregadas.length > 0) {
           setOrigemSelecionada(origensCarregadas[0]);
+        } else {
+          toast.error("Nenhuma origem disponível. Configure um remetente primeiro.");
         }
       } catch (error) {
         console.error("Erro ao carregar origens:", error);
