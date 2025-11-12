@@ -222,9 +222,7 @@ export default function SimuladorFrete() {
           <h2 className="mb-2 text-3xl font-black uppercase text-white sm:text-4xl md:text-5xl">
             BLACK FRIDAY
           </h2>
-          <h3 className="mb-3 text-xl font-bold text-white sm:text-2xl">
-            BRHUB ENVIOS
-          </h3>
+          
           <p className="mx-auto max-w-2xl text-sm text-white/90 sm:text-base">
             <span className="font-bold text-[#FF6B00]">50% DE DESCONTO</span> em todos os fretes! 
             Aproveite as melhores tarifas do mercado.
