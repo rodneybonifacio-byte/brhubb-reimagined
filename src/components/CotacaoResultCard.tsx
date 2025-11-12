@@ -22,9 +22,24 @@ const getLogoUrl = (nomeServico: string, transportadora: string): string => {
 
 export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
   const logoUrl = getLogoUrl(cotacao.nomeServico, cotacao.transportadora);
+  const precoFinal = parseFloat(cotacao.preco);
+  const precoOriginal = cotacao.precoOriginal ? parseFloat(cotacao.precoOriginal) : null;
+  const desconto = cotacao.desconto || (precoOriginal ? ((precoOriginal - precoFinal) / precoOriginal) * 100 : 0);
+  const temDesconto = desconto > 0;
   
   return (
-    <Card className="overflow-hidden border-border transition-all hover:border-primary hover:shadow-md">
+    <Card className="relative overflow-hidden border-border transition-all hover:border-primary hover:shadow-lg">
+      {/* Badge de Desconto */}
+      {temDesconto && (
+        <div className="absolute right-0 top-0 z-10">
+          <div className="rounded-bl-lg bg-gradient-to-r from-orange-500 to-primary px-3 py-1.5 shadow-md">
+            <p className="text-xs font-bold text-white">
+              {desconto.toFixed(0)}% OFF
+            </p>
+          </div>
+        </div>
+      )}
+      
       <div className="p-5">
         <div className="mb-4 flex items-start justify-between gap-3">
           {/* Logo da Transportadora */}
@@ -44,10 +59,24 @@ export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
           
           {/* Preço */}
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">A partir de</p>
-            <p className="text-2xl font-bold text-primary">
-              R$ {parseFloat(cotacao.preco).toFixed(2)}
+            {temDesconto && precoOriginal && (
+              <div className="mb-1">
+                <p className="text-xs text-muted-foreground line-through">
+                  De R$ {precoOriginal.toFixed(2)}
+                </p>
+              </div>
+            )}
+            <p className="text-xs font-medium text-muted-foreground">
+              {temDesconto ? 'Por apenas' : 'A partir de'}
             </p>
+            <p className="text-3xl font-bold text-primary">
+              R$ {precoFinal.toFixed(2)}
+            </p>
+            {temDesconto && (
+              <p className="mt-1 text-xs font-semibold text-green-600">
+                Economia de R$ {(precoOriginal! - precoFinal).toFixed(2)}
+              </p>
+            )}
           </div>
         </div>
 
