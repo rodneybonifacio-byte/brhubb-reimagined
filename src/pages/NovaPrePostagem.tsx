@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import {
   Select,
   SelectContent,
@@ -104,58 +104,57 @@ export default function NovaPrePostagem() {
               Informe o destino
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="cep">CEP de destino</Label>
-                <Input id="cep" placeholder="00000-000" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nome">Nome do destinatário</Label>
-                <Input id="nome" placeholder="Nome completo" />
-              </div>
+          <CardContent className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="nome">Nome do destinatário</Label>
+              <Input id="nome" placeholder="Nome completo" className="h-11" />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="cpf">CPF/CNPJ</Label>
-                <Input id="cpf" placeholder="000.000.000-00" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="telefone">Telefone</Label>
-                <Input id="telefone" placeholder="(11) 99999-9999" />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="cpf">CPF/CNPJ</Label>
+              <Input id="cpf" placeholder="000.000.000-00" className="h-11" />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="rua">Rua</Label>
-                <Input id="rua" placeholder="Nome da rua" />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="telefone">Telefone</Label>
+              <Input id="telefone" placeholder="(11) 99999-9999" className="h-11" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cep">CEP</Label>
+              <Input id="cep" placeholder="00000-000" className="h-11" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="rua">Rua</Label>
+              <Input id="rua" placeholder="Nome da rua" className="h-11" />
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="numero">Número</Label>
-                <Input id="numero" placeholder="123" />
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="bairro">Bairro</Label>
-                <Input id="bairro" placeholder="Nome do bairro" />
+                <Input id="numero" placeholder="123" className="h-11" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cidade">Cidade</Label>
-                <Input id="cidade" placeholder="São Paulo" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="uf">UF</Label>
-                <Input id="uf" placeholder="SP" maxLength={2} />
+                <Label htmlFor="complemento">Complemento</Label>
+                <Input id="complemento" placeholder="Apto, bloco, etc" className="h-11" />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="complemento">Complemento (opcional)</Label>
-              <Input id="complemento" placeholder="Apto, bloco, etc" />
+              <Label htmlFor="bairro">Bairro</Label>
+              <Input id="bairro" placeholder="Nome do bairro" className="h-11" />
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="cidade">Cidade</Label>
+                <Input id="cidade" placeholder="São Paulo" className="h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="uf">UF</Label>
+                <Input id="uf" placeholder="SP" maxLength={2} className="h-11" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -171,25 +170,10 @@ export default function NovaPrePostagem() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="valor">Valor do conteúdo</Label>
-              <Input id="valor" type="number" placeholder="0,00" />
+              <Input id="valor" type="number" placeholder="0,00" className="h-11" />
               <p className="text-xs text-muted-foreground">
                 Valor declarado para fins de seguro
               </p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Checkbox id="mao-propria" />
-                <label htmlFor="mao-propria" className="text-sm font-medium">
-                  Mão própria
-                </label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="ar" />
-                <label htmlFor="ar" className="text-sm font-medium">
-                  Aviso de recebimento (AR)
-                </label>
-              </div>
             </div>
           </CardContent>
         </Card>
