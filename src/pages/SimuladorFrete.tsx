@@ -4,20 +4,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Calculator, User, MapPin, Search, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { frete, CotacaoItem, clientes, remetentes, EnderecoCliente, RemetenteItem } from "@/lib/api";
 import { toast } from "sonner";
 import { CotacaoResultCard } from "@/components/CotacaoResultCard";
 import brhubLogo from "@/assets/brhub-logo.png";
 import correiosLogo from "@/assets/correios-logo.png";
 import rodonaves from "@/assets/rodonaves-logo.png";
-
 interface OrigemItem {
   id: string;
   nome: string;
@@ -26,14 +19,12 @@ interface OrigemItem {
   cpfCnpj: string;
   isPrincipal?: boolean;
 }
-
 interface EnderecoDestino {
   logradouro: string;
   bairro: string;
   localidade: string;
   uf: string;
 }
-
 export default function SimuladorFrete() {
   const [cep, setCep] = useState("");
   const [altura, setAltura] = useState("");
@@ -56,33 +47,27 @@ export default function SimuladorFrete() {
     const carregarOrigens = async () => {
       try {
         setLoadingOrigens(true);
-        
-        // Buscar remetentes primeiro (mais confiável)
-        const remetentesData = await remetentes.listar().catch((error) => {
-          console.error("Erro ao buscar remetentes:", error);
-          return { data: [] };
-        });
 
+        // Buscar remetentes primeiro (mais confiável)
+        const remetentesData = await remetentes.listar().catch(error => {
+          console.error("Erro ao buscar remetentes:", error);
+          return {
+            data: []
+          };
+        });
         const origensCarregadas: OrigemItem[] = [];
 
         // Adicionar remetentes
         if (remetentesData.data && remetentesData.data.length > 0) {
           remetentesData.data.forEach((remetente: RemetenteItem) => {
-            const enderecoFormatado = [
-              remetente.endereco.logradouro,
-              remetente.endereco.numero,
-              remetente.endereco.complemento,
-              remetente.endereco.bairro,
-              `${remetente.endereco.localidade}/${remetente.endereco.uf}`
-            ].filter(Boolean).join(', ');
-
+            const enderecoFormatado = [remetente.endereco.logradouro, remetente.endereco.numero, remetente.endereco.complemento, remetente.endereco.bairro, `${remetente.endereco.localidade}/${remetente.endereco.uf}`].filter(Boolean).join(', ');
             origensCarregadas.push({
               id: remetente.id,
               nome: remetente.nome,
               endereco: enderecoFormatado,
               cep: remetente.endereco.cep || "",
               cpfCnpj: remetente.cpfCnpj || "",
-              isPrincipal: false,
+              isPrincipal: false
             });
           });
         }
@@ -91,15 +76,8 @@ export default function SimuladorFrete() {
         try {
           const response = await clientes.getEnderecoPrincipal();
           const cliente = response.data;
-          
           if (cliente && cliente.endereco && cliente.endereco.logradouro && cliente.endereco.localidade) {
-            const enderecoFormatado = [
-              cliente.endereco.logradouro,
-              cliente.endereco.numero,
-              cliente.endereco.complemento,
-              cliente.endereco.bairro,
-              `${cliente.endereco.localidade}/${cliente.endereco.uf}`
-            ].filter(Boolean).join(', ');
+            const enderecoFormatado = [cliente.endereco.logradouro, cliente.endereco.numero, cliente.endereco.complemento, cliente.endereco.bairro, `${cliente.endereco.localidade}/${cliente.endereco.uf}`].filter(Boolean).join(', ');
 
             // Adicionar no início da lista se for válido
             origensCarregadas.unshift({
@@ -108,16 +86,15 @@ export default function SimuladorFrete() {
               endereco: enderecoFormatado,
               cep: cliente.endereco.cep || "",
               cpfCnpj: cliente.cpfCnpj || "",
-              isPrincipal: true,
+              isPrincipal: true
             });
           }
         } catch (error) {
           console.error("Erro ao buscar endereço principal:", error);
           // Continua com apenas os remetentes
         }
-
         setOrigens(origensCarregadas);
-        
+
         // Selecionar o primeiro endereço válido automaticamente
         if (origensCarregadas.length > 0) {
           setOrigemSelecionada(origensCarregadas[0]);
@@ -131,7 +108,6 @@ export default function SimuladorFrete() {
         setLoadingOrigens(false);
       }
     };
-
     carregarOrigens();
   }, []);
 
@@ -147,36 +123,29 @@ export default function SimuladorFrete() {
   // Função para buscar CEP
   const buscarCep = async (cepValue: string) => {
     const cepLimpo = cepValue.replace(/\D/g, '');
-    
+
     // Validar se o CEP tem 8 dígitos
     if (cepLimpo.length !== 8) {
       return;
     }
-
     setLoadingCep(true);
     setEnderecoDestino(null);
-
     try {
       const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
-      
       if (!response.ok) {
         throw new Error("Erro ao buscar CEP");
       }
-
       const data = await response.json();
-
       if (data.erro) {
         toast.error("CEP não encontrado");
         return;
       }
-
       setEnderecoDestino({
         logradouro: data.logradouro || "",
         bairro: data.bairro || "",
         localidade: data.localidade || "",
-        uf: data.uf || "",
+        uf: data.uf || ""
       });
-
       toast.success("CEP encontrado!");
     } catch (error) {
       console.error("Erro ao buscar CEP:", error);
@@ -199,27 +168,19 @@ export default function SimuladorFrete() {
       setEnderecoDestino(null);
     }
   };
-
-  const origensFiltradas = origens.filter((origem) =>
-    origem.nome.toLowerCase().includes(buscaOrigem.toLowerCase()) ||
-    origem.endereco.toLowerCase().includes(buscaOrigem.toLowerCase())
-  );
-
+  const origensFiltradas = origens.filter(origem => origem.nome.toLowerCase().includes(buscaOrigem.toLowerCase()) || origem.endereco.toLowerCase().includes(buscaOrigem.toLowerCase()));
   const handleCalcularFrete = async () => {
     // Validação
     if (!origemSelecionada) {
       toast.error("Selecione uma origem");
       return;
     }
-    
     if (!cep || !altura || !largura || !comprimento || !peso) {
       toast.error("Por favor, preencha todos os campos obrigatórios");
       return;
     }
-
     setLoading(true);
     setCotacoes([]);
-
     try {
       const response = await frete.cotacao({
         cepOrigem: origemSelecionada.cep.replace("-", ""),
@@ -229,15 +190,13 @@ export default function SimuladorFrete() {
           largura,
           comprimento,
           peso,
-          diametro: "0",
+          diametro: "0"
         },
         logisticaReversa: "N",
         valorDeclarado: parseFloat(valorDeclarado) || 0,
-        cpfCnpjLoja: origemSelecionada.cpfCnpj, // Usar CPF/CNPJ da origem selecionada
+        cpfCnpjLoja: origemSelecionada.cpfCnpj // Usar CPF/CNPJ da origem selecionada
       });
-
       setCotacoes(response.data);
-      
       if (response.data.length === 0) {
         toast.info("Nenhuma cotação disponível para os dados informados");
       } else {
@@ -250,9 +209,7 @@ export default function SimuladorFrete() {
       setLoading(false);
     }
   };
-
-  return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 p-4">
+  return <div className="mx-auto w-full max-w-7xl space-y-6 p-4">
       {/* Black Friday Banner */}
       <Card className="relative overflow-hidden border-none bg-gradient-to-r from-gray-900 via-orange-600 to-gray-900 shadow-xl">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDEwIEwgNDAgMTAgTSAxMCAwIEwgMTAgNDAgTSAwIDIwIEwgNDAgMjAgTSAyMCAwIEwgMjAgNDAgTSAwIDMwIEwgNDAgMzAgTSAzMCAwIEwgMzAgNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20" />
@@ -280,18 +237,7 @@ export default function SimuladorFrete() {
 
       {/* Logo Section */}
       <Card className="border-none shadow-sm">
-        <div className="p-6">
-          <div className="flex flex-col items-center gap-6">
-            {/* BRHUB Logo */}
-            <div className="flex items-center justify-center">
-              <img 
-                src={brhubLogo} 
-                alt="BRHUB Envios" 
-                className="h-16 w-auto object-contain sm:h-20"
-              />
-            </div>
-          </div>
-        </div>
+        
       </Card>
 
       {/* Header */}
@@ -306,17 +252,12 @@ export default function SimuladorFrete() {
       <Card className="border-none shadow-sm">
         <div className="p-6">
           {/* Origem */}
-          {loadingOrigens ? (
-            <div className="mb-6 flex items-center justify-center rounded-lg border border-border bg-muted/30 p-8">
+          {loadingOrigens ? <div className="mb-6 flex items-center justify-center rounded-lg border border-border bg-muted/30 p-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               <span className="ml-2 text-sm text-muted-foreground">Carregando origens...</span>
-            </div>
-          ) : origens.length === 0 ? (
-            <div className="mb-6 rounded-lg border border-border bg-muted/30 p-4">
+            </div> : origens.length === 0 ? <div className="mb-6 rounded-lg border border-border bg-muted/30 p-4">
               <p className="text-sm text-muted-foreground">Nenhuma origem disponível</p>
-            </div>
-          ) : (
-            <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+            </div> : <Dialog open={modalOpen} onOpenChange={setModalOpen}>
               <DialogTrigger asChild>
                 <div className="mb-6 cursor-pointer rounded-lg border border-border bg-muted/30 p-4 transition-colors hover:bg-muted/50">
                   <div className="flex items-start justify-between gap-3">
@@ -326,11 +267,9 @@ export default function SimuladorFrete() {
                         <p className="font-semibold">Origem:</p>
                         <p className="text-sm font-medium">
                           {origemSelecionada?.nome}
-                          {origemSelecionada?.isPrincipal && (
-                            <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                          {origemSelecionada?.isPrincipal && <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
                               Principal
-                            </span>
-                          )}
+                            </span>}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {origemSelecionada?.endereco}
@@ -351,93 +290,49 @@ export default function SimuladorFrete() {
               {/* Campo de Busca */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome ou endereço..."
-                  value={buscaOrigem}
-                  onChange={(e) => setBuscaOrigem(e.target.value)}
-                  className="pl-10"
-                />
+                <Input placeholder="Buscar por nome ou endereço..." value={buscaOrigem} onChange={e => setBuscaOrigem(e.target.value)} className="pl-10" />
               </div>
 
               <div className="max-h-[400px] space-y-3 overflow-y-auto">
-                {origensFiltradas.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">
+                {origensFiltradas.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">
                     Nenhuma origem encontrada
-                  </p>
-                ) : (
-                  origensFiltradas.map((origem) => (
-                  <button
-                    key={origem.id}
-                    onClick={() => {
-                      setOrigemSelecionada(origem);
-                      setModalOpen(false);
-                    }}
-                    className={`w-full rounded-lg border p-4 text-left transition-all hover:border-primary hover:bg-accent ${
-                      origemSelecionada?.id === origem.id
-                        ? "border-primary bg-accent"
-                        : "border-border"
-                    }`}
-                  >
+                  </p> : origensFiltradas.map(origem => <button key={origem.id} onClick={() => {
+                setOrigemSelecionada(origem);
+                setModalOpen(false);
+              }} className={`w-full rounded-lg border p-4 text-left transition-all hover:border-primary hover:bg-accent ${origemSelecionada?.id === origem.id ? "border-primary bg-accent" : "border-border"}`}>
                     <div className="flex items-start gap-3">
                       <MapPin className="mt-1 h-5 w-5 text-primary" />
                       <div className="flex-1">
                         <p className="font-semibold">
                           {origem.nome}
-                          {origem.isPrincipal && (
-                            <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                          {origem.isPrincipal && <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
                               Principal
-                            </span>
-                          )}
+                            </span>}
                         </p>
                         <p className="text-sm text-muted-foreground">{origem.endereco}</p>
                         <p className="mt-1 text-xs text-muted-foreground">CEP: {origem.cep}</p>
                       </div>
-                      {origemSelecionada?.id === origem.id && (
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary">
-                          <svg
-                            className="h-4 w-4 text-primary-foreground"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
+                      {origemSelecionada?.id === origem.id && <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary">
+                          <svg className="h-4 w-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
-                        </div>
-                      )}
+                        </div>}
                     </div>
-                  </button>
-                  ))
-                )}
+                  </button>)}
               </div>
             </DialogContent>
-          </Dialog>
-          )}
+          </Dialog>}
 
           {/* CEP Destino */}
           <div className="mb-6">
             <Label htmlFor="cep" className="text-base">CEP de Destino</Label>
             <div className="relative">
-              <Input
-                id="cep"
-                placeholder="00000-000"
-                value={cep}
-                onChange={(e) => handleCepChange(e.target.value)}
-                maxLength={9}
-                className="mt-2 h-12 rounded-lg"
-              />
-              {loadingCep && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <Input id="cep" placeholder="00000-000" value={cep} onChange={e => handleCepChange(e.target.value)} maxLength={9} className="mt-2 h-12 rounded-lg" />
+              {loadingCep && <div className="absolute right-3 top-1/2 -translate-y-1/2">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              )}
+                </div>}
             </div>
-            {enderecoDestino && (
-              <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
+            {enderecoDestino && <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-sm font-medium text-foreground">
                   {enderecoDestino.logradouro}
                   {enderecoDestino.logradouro && enderecoDestino.bairro && " - "}
@@ -446,8 +341,7 @@ export default function SimuladorFrete() {
                 <p className="text-xs text-muted-foreground">
                   {enderecoDestino.localidade}/{enderecoDestino.uf}
                 </p>
-              </div>
-            )}
+              </div>}
           </div>
 
           {/* Dimensões */}
@@ -456,47 +350,19 @@ export default function SimuladorFrete() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <Label htmlFor="altura" className="text-primary">Altura:</Label>
-                <Input
-                  id="altura"
-                  type="number"
-                  placeholder="0"
-                  value={altura}
-                  onChange={(e) => setAltura(e.target.value)}
-                  className="mt-2 h-12 rounded-lg"
-                />
+                <Input id="altura" type="number" placeholder="0" value={altura} onChange={e => setAltura(e.target.value)} className="mt-2 h-12 rounded-lg" />
               </div>
               <div>
                 <Label htmlFor="largura" className="text-primary">largura:</Label>
-                <Input
-                  id="largura"
-                  type="number"
-                  placeholder="0"
-                  value={largura}
-                  onChange={(e) => setLargura(e.target.value)}
-                  className="mt-2 h-12 rounded-lg"
-                />
+                <Input id="largura" type="number" placeholder="0" value={largura} onChange={e => setLargura(e.target.value)} className="mt-2 h-12 rounded-lg" />
               </div>
               <div>
                 <Label htmlFor="comprimento" className="text-primary">Comprimento:</Label>
-                <Input
-                  id="comprimento"
-                  type="number"
-                  placeholder="0"
-                  value={comprimento}
-                  onChange={(e) => setComprimento(e.target.value)}
-                  className="mt-2 h-12 rounded-lg"
-                />
+                <Input id="comprimento" type="number" placeholder="0" value={comprimento} onChange={e => setComprimento(e.target.value)} className="mt-2 h-12 rounded-lg" />
               </div>
               <div>
                 <Label htmlFor="peso" className="text-primary">Peso:</Label>
-                <Input
-                  id="peso"
-                  type="number"
-                  placeholder="0"
-                  value={peso}
-                  onChange={(e) => setPeso(e.target.value)}
-                  className="mt-2 h-12 rounded-lg"
-                />
+                <Input id="peso" type="number" placeholder="0" value={peso} onChange={e => setPeso(e.target.value)} className="mt-2 h-12 rounded-lg" />
               </div>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -507,21 +373,13 @@ export default function SimuladorFrete() {
           {/* Valor Declarado */}
           <div className="mb-6">
             <Label htmlFor="valorDeclarado" className="text-muted-foreground">Valor Declarado:</Label>
-            <Input
-              id="valorDeclarado"
-              type="number"
-              placeholder="0"
-              value={valorDeclarado}
-              onChange={(e) => setValorDeclarado(e.target.value)}
-              className="mt-2 h-12 rounded-lg"
-            />
+            <Input id="valorDeclarado" type="number" placeholder="0" value={valorDeclarado} onChange={e => setValorDeclarado(e.target.value)} className="mt-2 h-12 rounded-lg" />
           </div>
         </div>
       </Card>
 
       {/* Results or Empty State */}
-      {loading ? (
-        <Card className="border-none shadow-sm">
+      {loading ? <Card className="border-none shadow-sm">
           <div className="flex min-h-[300px] flex-col items-center justify-center p-4 text-center sm:p-8">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
             <h3 className="mt-6 text-xl font-semibold sm:text-2xl">Calculando opções de frete...</h3>
@@ -529,22 +387,16 @@ export default function SimuladorFrete() {
               Aguarde enquanto buscamos as melhores opções para você
             </p>
           </div>
-        </Card>
-      ) : cotacoes.length > 0 ? (
-        <div className="space-y-4">
+        </Card> : cotacoes.length > 0 ? <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">
               {cotacoes.length} opção{cotacoes.length > 1 ? 'ões' : ''} encontrada{cotacoes.length > 1 ? 's' : ''}
             </h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {cotacoes.map((cotacao, index) => (
-              <CotacaoResultCard key={`${cotacao.idLote}-${index}`} cotacao={cotacao} />
-            ))}
+            {cotacoes.map((cotacao, index) => <CotacaoResultCard key={`${cotacao.idLote}-${index}`} cotacao={cotacao} />)}
           </div>
-        </div>
-      ) : (
-        <Card className="border-none shadow-sm">
+        </div> : <Card className="border-none shadow-sm">
           <div className="flex min-h-[300px] flex-col items-center justify-center p-4 text-center sm:p-8">
             <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-muted sm:h-32 sm:w-32">
               <Calculator className="h-12 w-12 text-muted-foreground sm:h-16 sm:w-16" />
@@ -554,30 +406,19 @@ export default function SimuladorFrete() {
               Preencha os dados acima e clique em calcular para ver as opções de frete disponíveis
             </p>
           </div>
-        </Card>
-      )}
+        </Card>}
 
       {/* Calculate Button - Fixed at bottom on mobile */}
       <div className="sticky bottom-4 z-10">
-        <Button
-          size="lg"
-          className="h-14 w-full rounded-full font-semibold shadow-lg"
-          onClick={handleCalcularFrete}
-          disabled={loading}
-        >
-          {loading ? (
-            <>
+        <Button size="lg" className="h-14 w-full rounded-full font-semibold shadow-lg" onClick={handleCalcularFrete} disabled={loading}>
+          {loading ? <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Calculando...
-            </>
-          ) : (
-            <>
+            </> : <>
               <Calculator className="mr-2 h-5 w-5" />
               Calcular Frete
-            </>
-          )}
+            </>}
         </Button>
       </div>
-    </div>
-  );
+    </div>;
 }
