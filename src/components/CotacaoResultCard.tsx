@@ -23,11 +23,16 @@ const getLogoUrl = (nomeServico: string, transportadora: string): string => {
 export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
   const logoUrl = getLogoUrl(cotacao.nomeServico, cotacao.transportadora);
   
-  // Usar valores reais da tabela de acréscimo da API
-  const valorBase = parseFloat(cotacao.precoBase || cotacao.preco);
+  // Valor apresentado pela API já tem o acréscimo aplicado
   const valorComAcrescimo = parseFloat(cotacao.preco);
   const acrescimoPercentual = cotacao.percentualAcrescimo || cotacao.acrescimo || 0;
-  const valorAcrescimo = valorComAcrescimo - valorBase;
+  
+  // Calcular valor real: valorApresentado / (1 + percentualAcrescimo/100)
+  const valorReal = acrescimoPercentual > 0 
+    ? valorComAcrescimo / (1 + acrescimoPercentual / 100)
+    : valorComAcrescimo;
+  
+  const valorAcrescimo = valorComAcrescimo - valorReal;
   
   return (
     <Card className="group relative overflow-hidden border-border transition-all hover:border-primary hover:shadow-xl animate-fade-in">
@@ -71,10 +76,10 @@ export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
             </p>
           </div>
           <p className="mb-1 text-xs text-muted-foreground">
-            De: R$ {valorBase.toFixed(2)}
+            Valor real do frete: R$ {valorReal.toFixed(2)}
           </p>
           <p className="mb-1 text-xs font-medium text-muted-foreground">
-            Para
+            Valor com acréscimo
           </p>
           <p className="mb-2 text-4xl font-black text-primary">
             R$ {valorComAcrescimo.toFixed(2)}
