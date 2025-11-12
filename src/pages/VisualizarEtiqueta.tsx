@@ -31,10 +31,22 @@ export default function VisualizarEtiqueta() {
     const carregarPdf = async () => {
       try {
         setLoading(true);
-        const response = await fetch(urlEtiqueta);
+        const response = await fetch(urlEtiqueta, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/pdf',
+          },
+        });
         
         if (!response.ok) {
-          throw new Error('Erro ao carregar PDF');
+          console.error('Erro na resposta:', response.status, response.statusText);
+          throw new Error(`Erro ao carregar PDF: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (contentType && !contentType.includes('pdf')) {
+          console.error('Tipo de conteúdo incorreto:', contentType);
+          throw new Error('Resposta não é um PDF');
         }
         
         const blob = await response.blob();

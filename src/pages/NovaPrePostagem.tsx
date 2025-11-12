@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { MapPin, Package, DollarSign, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { remetentes, frete, emissoes, type RemetenteItem, type CotacaoItem } from "@/lib/api";
+import { remetentes, frete, emissoes, auth, type RemetenteItem, type CotacaoItem } from "@/lib/api";
 import { CotacaoResultCard } from "@/components/CotacaoResultCard";
 
 export default function NovaPrePostagem() {
@@ -199,12 +199,13 @@ export default function NovaPrePostagem() {
 
       toast.success(`Etiqueta criada com sucesso!`);
       
-      // Navegar para página de visualização da etiqueta
-      if (response.link_etiqueta) {
-        navigate(`/envios/visualizar?url=${encodeURIComponent(response.link_etiqueta)}&id=${response.id}`);
-      } else {
-        navigate("/envios/pre-postagem");
-      }
+      // Navegar para página de visualização da etiqueta usando a URL correta da API
+      const token = auth.getToken();
+      const etiquetaUrl = cotacaoSelecionada.transportadora === "CORREIOS" 
+        ? `https://envios.brhubb.com.br/api/emissoes/etiqueta-correios/imprimir/${response.id}?token=${token}`
+        : `https://envios.brhubb.com.br/api/emissoes/etiqueta/pdf/${response.id}?token=${token}`;
+      
+      navigate(`/envios/visualizar?url=${encodeURIComponent(etiquetaUrl)}&id=${response.id}`);
     } catch (error: any) {
       toast.error(error.message || "Erro ao criar etiqueta");
     } finally {
@@ -513,8 +514,11 @@ export default function NovaPrePostagem() {
           <Card className="border-none shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-base font-semibold uppercase text-primary">
-                Selecione o frete
+                Selecione o frete desejado
               </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Clique na opção de frete para selecionar e depois clique em "Criar etiqueta"
+              </p>
             </CardHeader>
             <CardContent className="space-y-4">
               {cotacoes.map((cotacao, index) => (
