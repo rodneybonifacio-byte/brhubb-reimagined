@@ -290,33 +290,6 @@ export default function SimuladorFrete() {
                 className="h-16 w-auto object-contain sm:h-20"
               />
             </div>
-            
-            {/* Separator */}
-            <div className="flex w-full items-center gap-3">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs font-medium text-muted-foreground">
-                TRANSPORTADORAS PARCEIRAS
-              </span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-            
-            {/* Partner Logos */}
-            <div className="grid w-full grid-cols-2 gap-4 sm:gap-6">
-              <div className="flex items-center justify-center rounded-lg border border-border bg-background p-6 transition-all hover:border-primary/50 hover:shadow-md">
-                <img 
-                  src={correiosLogo} 
-                  alt="Correios" 
-                  className="h-20 w-auto object-contain sm:h-24"
-                />
-              </div>
-              <div className="flex items-center justify-center rounded-lg border border-border bg-background p-6 transition-all hover:border-primary/50 hover:shadow-md">
-                <img 
-                  src={rodonaves} 
-                  alt="Rodonaves" 
-                  className="h-20 w-auto object-contain sm:h-24"
-                />
-              </div>
-            </div>
           </div>
         </div>
       </Card>
