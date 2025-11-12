@@ -253,6 +253,31 @@ export default function SimuladorFrete() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4">
+      {/* Black Friday Banner */}
+      <Card className="relative overflow-hidden border-none bg-gradient-to-r from-gray-900 via-orange-600 to-gray-900 shadow-xl">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDEwIEwgNDAgMTAgTSAxMCAwIEwgMTAgNDAgTSAwIDIwIEwgNDAgMjAgTSAyMCAwIEwgMjAgNDAgTSAwIDMwIEwgNDAgMzAgTSAzMCAwIEwgMzAgNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20" />
+        <div className="relative p-6 text-center">
+          <div className="mb-3 inline-block animate-pulse rounded-full bg-black px-4 py-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-white">
+              🔥 Oferta Limitada
+            </p>
+          </div>
+          <h2 className="mb-2 text-3xl font-black uppercase text-white sm:text-4xl md:text-5xl">
+            BLACK FRIDAY
+          </h2>
+          <h3 className="mb-3 text-xl font-bold text-white sm:text-2xl">
+            BRHUB ENVIOS
+          </h3>
+          <p className="mx-auto max-w-2xl text-sm text-white/90 sm:text-base">
+            <span className="font-bold text-[#FF6B00]">50% DE DESCONTO</span> em todos os fretes! 
+            Aproveite as melhores tarifas do mercado.
+          </p>
+          <div className="mt-4 flex items-center justify-center gap-2 text-white">
+            <span className="text-sm font-medium">⚡ Válido por tempo limitado</span>
+          </div>
+        </div>
+      </Card>
+
       {/* Logo Section */}
       <Card className="border-none shadow-sm">
         <div className="p-6">

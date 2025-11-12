@@ -29,12 +29,12 @@ export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
   const economia = precoOriginal - precoFinal;
   
   return (
-    <Card className="relative overflow-hidden border-border transition-all hover:border-primary hover:shadow-lg">
-      {/* Badge de Desconto */}
-      <div className="absolute right-2 top-2 z-10">
-        <div className="rounded-lg bg-gradient-to-r from-orange-500 to-primary px-3 py-1 shadow-md">
-          <p className="text-xs font-bold text-white">
-            {desconto}% OFF
+    <Card className="group relative overflow-hidden border-border transition-all hover:border-primary hover:shadow-xl animate-fade-in">
+      {/* Badge de Desconto Black Friday */}
+      <div className="absolute right-2 top-2 z-10 animate-pulse">
+        <div className="rounded-lg bg-gradient-to-r from-black via-orange-600 to-black px-3 py-1 shadow-lg">
+          <p className="text-xs font-bold uppercase text-white">
+            🔥 {desconto}% OFF
           </p>
         </div>
       </div>
@@ -61,19 +61,26 @@ export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
         <h3 className="mb-3 text-center text-base font-semibold">{cotacao.nomeServico}</h3>
         
         {/* Preços */}
-        <div className="mb-4 rounded-lg bg-muted/30 p-4 text-center">
+        <div className="mb-4 rounded-lg bg-gradient-to-br from-orange-50 to-orange-100 p-4 text-center dark:from-orange-950/20 dark:to-orange-900/20">
+          <div className="mb-2 inline-block rounded-full bg-black px-3 py-1">
+            <p className="text-xs font-bold uppercase text-white">
+              Black Friday
+            </p>
+          </div>
           <p className="mb-1 text-xs text-muted-foreground line-through">
             De R$ {precoOriginal.toFixed(2)}
           </p>
           <p className="mb-1 text-xs font-medium text-muted-foreground">
             Por apenas
           </p>
-          <p className="mb-2 text-3xl font-bold text-primary">
+          <p className="mb-2 text-4xl font-black text-primary">
             R$ {precoFinal.toFixed(2)}
           </p>
-          <p className="inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-400">
-            Economize R$ {economia.toFixed(2)}
-          </p>
+          <div className="inline-block rounded-full bg-green-600 px-4 py-1.5 shadow-md">
+            <p className="text-xs font-bold text-white">
+              💰 Economize R$ {economia.toFixed(2)}
+            </p>
+          </div>
         </div>
 
         {/* Informações */}
