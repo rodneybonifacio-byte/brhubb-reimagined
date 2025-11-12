@@ -20,6 +20,7 @@ interface OrigemItem {
   nome: string;
   endereco: string;
   cep: string;
+  cpfCnpj: string;
   isPrincipal?: boolean;
 }
 
@@ -77,6 +78,7 @@ export default function SimuladorFrete() {
               nome: remetente.nome,
               endereco: enderecoFormatado,
               cep: remetente.endereco.cep || "",
+              cpfCnpj: remetente.cpfCnpj || "",
               isPrincipal: false,
             });
           });
@@ -84,23 +86,25 @@ export default function SimuladorFrete() {
 
         // Tentar adicionar endereço principal do cliente
         try {
-          const enderecoPrincipal = await clientes.getEnderecoPrincipal();
+          const response = await clientes.getEnderecoPrincipal();
+          const cliente = response.data;
           
-          if (enderecoPrincipal && enderecoPrincipal.logradouro && enderecoPrincipal.localidade) {
+          if (cliente && cliente.endereco && cliente.endereco.logradouro && cliente.endereco.localidade) {
             const enderecoFormatado = [
-              enderecoPrincipal.logradouro,
-              enderecoPrincipal.numero,
-              enderecoPrincipal.complemento,
-              enderecoPrincipal.bairro,
-              `${enderecoPrincipal.localidade}/${enderecoPrincipal.uf}`
+              cliente.endereco.logradouro,
+              cliente.endereco.numero,
+              cliente.endereco.complemento,
+              cliente.endereco.bairro,
+              `${cliente.endereco.localidade}/${cliente.endereco.uf}`
             ].filter(Boolean).join(', ');
 
             // Adicionar no início da lista se for válido
             origensCarregadas.unshift({
               id: "principal",
-              nome: "Endereço Principal",
+              nome: cliente.nome || "Endereço Principal",
               endereco: enderecoFormatado,
-              cep: enderecoPrincipal.cep || "",
+              cep: cliente.endereco.cep || "",
+              cpfCnpj: cliente.cpfCnpj || "",
               isPrincipal: true,
             });
           }
@@ -226,7 +230,7 @@ export default function SimuladorFrete() {
         },
         logisticaReversa: "N",
         valorDeclarado: parseFloat(valorDeclarado) || 0,
-        cpfCnpjLoja: "", // Será preenchido pela função com dados do usuário
+        cpfCnpjLoja: origemSelecionada.cpfCnpj, // Usar CPF/CNPJ da origem selecionada
       });
 
       setCotacoes(response.data);

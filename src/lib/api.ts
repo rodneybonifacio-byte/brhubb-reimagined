@@ -163,8 +163,21 @@ export interface RemetentesResponse {
   };
 }
 
+export interface ClienteResponse {
+  data: {
+    id: string;
+    nome: string;
+    cpfCnpj: string;
+    telefone: string;
+    email: string;
+    criadoEm: string;
+    endereco: EnderecoCliente;
+    transportadoraConfiguracoes: any[];
+  };
+}
+
 export const clientes = {
-  getEnderecoPrincipal: async (): Promise<EnderecoCliente> => {
+  getEnderecoPrincipal: async (): Promise<ClienteResponse> => {
     const token = auth.getToken();
     const userData = auth.getUserData();
     
@@ -213,22 +226,6 @@ export const remetentes = {
 export const frete = {
   cotacao: async (dados: CotacaoRequest): Promise<CotacaoResponse> => {
     const token = auth.getToken();
-    const userData = auth.getUserData();
-    
-    console.log("Dados do usuário para cotação:", userData);
-    
-    // Usar cpfCnpj ou clienteId como fallback
-    const cpfCnpjLoja = userData?.cpfCnpj || userData?.clienteId;
-    
-    if (!cpfCnpjLoja) {
-      throw new Error("CPF/CNPJ não encontrado. Faça login novamente.");
-    }
-    
-    // Usar o cpfCnpj do usuário logado
-    const requestData = {
-      ...dados,
-      cpfCnpjLoja: cpfCnpjLoja,
-    };
     
     const response = await fetch(`${API_BASE_URL}/frete/cotacao`, {
       method: "POST",
@@ -236,7 +233,7 @@ export const frete = {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify(requestData),
+      body: JSON.stringify(dados),
     });
 
     if (!response.ok) {
