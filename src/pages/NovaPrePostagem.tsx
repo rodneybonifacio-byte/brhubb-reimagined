@@ -190,7 +190,7 @@ export default function NovaPrePostagem() {
             numero: numeroDestinatario,
             complemento: complementoDestinatario,
             bairro: bairroDestinatario,
-            cidade: cidadeDestinatario,
+            localidade: cidadeDestinatario,
             uf: ufDestinatario,
           },
         },

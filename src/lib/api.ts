@@ -269,7 +269,7 @@ export interface EmissaoDestinatario {
     numero: string;
     complemento?: string;
     bairro: string;
-    cidade: string;
+    localidade: string;
     uf: string;
   };
 }
@@ -285,7 +285,7 @@ export interface EmissaoRemetente {
     numero: string;
     complemento?: string;
     bairro: string;
-    cidade: string;
+    localidade: string;
     uf: string;
   };
 }
