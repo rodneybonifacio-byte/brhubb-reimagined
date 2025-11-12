@@ -197,7 +197,13 @@ export default function NovaPrePostagem() {
         valorDeclarado: parseFloat(valorDeclarado) || 0,
       });
 
-      toast.success(`Etiqueta criada! Código: ${response.data.codigoRastreio}`);
+      toast.success(`Etiqueta criada com sucesso! ID: ${response.id}`);
+      
+      // Abrir etiqueta em nova aba
+      if (response.link_etiqueta) {
+        window.open(response.link_etiqueta, "_blank");
+      }
+      
       navigate("/envios/pre-postagem");
     } catch (error: any) {
       toast.error(error.message || "Erro ao criar etiqueta");

@@ -353,13 +353,13 @@ export interface EmissoesResponse {
 }
 
 export interface EmissaoResponse {
-  data: {
-    id: string;
-    codigoRastreio: string;
-    status: string;
-    urlEtiqueta?: string;
-    urlDeclaracao?: string;
-  };
+  id: string;
+  frete: any[];
+  link_etiqueta: string;
+  codigoRastreio?: string;
+  status?: string;
+  urlEtiqueta?: string;
+  urlDeclaracao?: string;
 }
 
 export const emissoes = {
