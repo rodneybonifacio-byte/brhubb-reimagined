@@ -14,6 +14,11 @@ import {
 import { frete, CotacaoItem, clientes, remetentes, EnderecoCliente, RemetenteItem } from "@/lib/api";
 import { toast } from "sonner";
 import { CotacaoResultCard } from "@/components/CotacaoResultCard";
+import brhubLogo from "@/assets/brhub-logo.png";
+import sedexLogo from "@/assets/sedex-logo.png";
+import sedexHojeLogo from "@/assets/sedex-hoje-logo.png";
+import pacLogo from "@/assets/pac-logo.png";
+import rodonaves from "@/assets/rodonaves-logo.png";
 
 interface OrigemItem {
   id: string;
@@ -250,6 +255,63 @@ export default function SimuladorFrete() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4">
+      {/* Logo Section */}
+      <Card className="border-none shadow-sm">
+        <div className="p-6">
+          <div className="flex flex-col items-center gap-6">
+            {/* BRHUB Logo */}
+            <div className="flex items-center justify-center">
+              <img 
+                src={brhubLogo} 
+                alt="BRHUB Envios" 
+                className="h-16 w-auto object-contain sm:h-20"
+              />
+            </div>
+            
+            {/* Separator */}
+            <div className="flex w-full items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs font-medium text-muted-foreground">
+                TRANSPORTADORAS PARCEIRAS
+              </span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            
+            {/* Partner Logos */}
+            <div className="grid w-full grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-6">
+              <div className="flex items-center justify-center rounded-lg border border-border bg-background p-4 transition-all hover:border-primary/50 hover:shadow-md">
+                <img 
+                  src={sedexLogo} 
+                  alt="Sedex" 
+                  className="h-10 w-auto object-contain sm:h-12"
+                />
+              </div>
+              <div className="flex items-center justify-center rounded-lg border border-border bg-background p-4 transition-all hover:border-primary/50 hover:shadow-md">
+                <img 
+                  src={sedexHojeLogo} 
+                  alt="Sedex Hoje" 
+                  className="h-10 w-auto object-contain sm:h-12"
+                />
+              </div>
+              <div className="flex items-center justify-center rounded-lg border border-border bg-background p-4 transition-all hover:border-primary/50 hover:shadow-md">
+                <img 
+                  src={pacLogo} 
+                  alt="PAC" 
+                  className="h-10 w-auto object-contain sm:h-12"
+                />
+              </div>
+              <div className="flex items-center justify-center rounded-lg border border-border bg-background p-4 transition-all hover:border-primary/50 hover:shadow-md">
+                <img 
+                  src={rodonaves} 
+                  alt="Rodonaves" 
+                  className="h-10 w-auto object-contain sm:h-12"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold sm:text-3xl">Simulador de Frete</h1>
