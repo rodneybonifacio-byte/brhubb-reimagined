@@ -28,7 +28,7 @@ export function CotacaoResultCard({ cotacao }: CotacaoResultCardProps) {
       <div className="p-5">
         <div className="mb-4 flex items-start justify-between gap-3">
           {/* Logo da Transportadora */}
-          <div className="flex h-20 w-32 items-center justify-center rounded-lg bg-muted/50 p-3">
+          <div className="flex h-24 w-40 items-center justify-center rounded-lg bg-muted/50 p-3">
             {logoUrl ? (
               <img
                 src={logoUrl}

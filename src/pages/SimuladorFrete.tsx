@@ -281,14 +281,14 @@ export default function SimuladorFrete() {
                 <img 
                   src={correiosLogo} 
                   alt="Correios" 
-                  className="h-16 w-auto object-contain sm:h-20"
+                  className="h-20 w-auto object-contain sm:h-24"
                 />
               </div>
               <div className="flex items-center justify-center rounded-lg border border-border bg-background p-6 transition-all hover:border-primary/50 hover:shadow-md">
                 <img 
                   src={rodonaves} 
                   alt="Rodonaves" 
-                  className="h-16 w-auto object-contain sm:h-20"
+                  className="h-20 w-auto object-contain sm:h-24"
                 />
               </div>
             </div>
