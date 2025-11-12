@@ -3,7 +3,15 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { AppLayout } from "./components/AppLayout";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import PrePostagem from "./pages/PrePostagem";
+import NovaPrePostagem from "./pages/NovaPrePostagem";
+import AcompanhamentoEnvios from "./pages/AcompanhamentoEnvios";
+import Coletas from "./pages/Coletas";
+import Faturas from "./pages/Faturas";
+import Clientes from "./pages/Clientes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -15,8 +23,16 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/login" element={<Login />} />
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/envios/pre-postagem" element={<PrePostagem />} />
+            <Route path="/envios/nova" element={<NovaPrePostagem />} />
+            <Route path="/acompanhamento/envios" element={<AcompanhamentoEnvios />} />
+            <Route path="/acompanhamento/coletas" element={<Coletas />} />
+            <Route path="/financeiro/faturas" element={<Faturas />} />
+            <Route path="/cadastros/clientes" element={<Clientes />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
