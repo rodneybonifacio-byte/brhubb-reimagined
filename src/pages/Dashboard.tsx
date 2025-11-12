@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Package, Truck, CheckCircle, Clock, TrendingUp, Plus } from "lucide-react";
+import { Package, Truck, CheckCircle, Clock, TrendingUp, Plus, Calculator } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const quickStats = [
@@ -44,7 +44,7 @@ export default function Dashboard() {
       <Card className="border-none shadow-sm">
         <CardContent className="p-6">
           <h2 className="mb-4 text-lg font-semibold">Ações rápidas</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Button
               variant="outline"
               className="h-auto flex-col gap-2 py-6"
@@ -54,6 +54,17 @@ export default function Dashboard() {
               <div className="text-center">
                 <p className="font-semibold">Nova etiqueta</p>
                 <p className="text-xs text-muted-foreground">Criar novo envio</p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto flex-col gap-2 py-6"
+              onClick={() => navigate("/simulador-frete")}
+            >
+              <Calculator className="h-6 w-6" />
+              <div className="text-center">
+                <p className="font-semibold">Simulação de Frete</p>
+                <p className="text-xs text-muted-foreground">Calcular valores</p>
               </div>
             </Button>
             <Button

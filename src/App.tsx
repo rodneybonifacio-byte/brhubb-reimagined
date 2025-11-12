@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import PrePostagem from "./pages/PrePostagem";
 import NovaPrePostagem from "./pages/NovaPrePostagem";
+import SimuladorFrete from "./pages/SimuladorFrete";
 import AcompanhamentoEnvios from "./pages/AcompanhamentoEnvios";
 import Coletas from "./pages/Coletas";
 import Faturas from "./pages/Faturas";
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/envios/pre-postagem" element={<PrePostagem />} />
             <Route path="/envios/nova" element={<NovaPrePostagem />} />
+            <Route path="/simulador-frete" element={<SimuladorFrete />} />
             <Route path="/acompanhamento/envios" element={<AcompanhamentoEnvios />} />
             <Route path="/acompanhamento/coletas" element={<Coletas />} />
             <Route path="/financeiro/faturas" element={<Faturas />} />
