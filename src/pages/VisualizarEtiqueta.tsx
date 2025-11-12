@@ -15,6 +15,7 @@ export default function VisualizarEtiqueta() {
   const [iframeError, setIframeError] = useState(false);
   const [emissaoData, setEmissaoData] = useState<EmissaoItem | null>(null);
   const [loadingEmissao, setLoadingEmissao] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   
   const urlEtiqueta = searchParams.get("url");
   const emissaoId = searchParams.get("id");
@@ -23,14 +24,38 @@ export default function VisualizarEtiqueta() {
     if (!urlEtiqueta) {
       setError(true);
       setLoading(false);
-    } else {
-      // Timeout para garantir que não fique loading infinito
-      const timeout = setTimeout(() => {
-        setLoading(false);
-      }, 10000);
-      
-      return () => clearTimeout(timeout);
+      return;
     }
+
+    // Baixar o PDF e criar blob URL
+    const carregarPdf = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(urlEtiqueta);
+        
+        if (!response.ok) {
+          throw new Error('Erro ao carregar PDF');
+        }
+        
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        setPdfBlobUrl(blobUrl);
+        setLoading(false);
+      } catch (error) {
+        console.error('Erro ao carregar PDF:', error);
+        setIframeError(true);
+        setLoading(false);
+      }
+    };
+
+    carregarPdf();
+
+    // Cleanup: revogar blob URL quando componente desmontar
+    return () => {
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
+      }
+    };
   }, [urlEtiqueta]);
 
   useEffect(() => {
@@ -61,10 +86,11 @@ export default function VisualizarEtiqueta() {
   };
 
   const handleBaixar = () => {
-    if (urlEtiqueta) {
+    const downloadUrl = pdfBlobUrl || urlEtiqueta;
+    if (downloadUrl) {
       const link = document.createElement('a');
-      link.href = urlEtiqueta;
-      link.download = `etiqueta-${emissaoId || 'download'}.pdf`;
+      link.href = downloadUrl;
+      link.download = `etiqueta-${emissaoData?.codigoObjeto || emissaoId || 'download'}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -191,20 +217,17 @@ export default function VisualizarEtiqueta() {
 
         {/* PDF Viewer - Desktop */}
         <div className="hidden h-full md:block">
-          {!iframeError && !loading ? (
+          {!iframeError && !loading && pdfBlobUrl ? (
             <object
-              data={urlEtiqueta}
+              data={pdfBlobUrl}
               type="application/pdf"
               className="h-full w-full"
-              onLoad={() => setLoading(false)}
             >
               <iframe
-                src={urlEtiqueta}
+                src={pdfBlobUrl}
                 className="h-full w-full border-0"
                 title="Etiqueta de Envio"
-                onLoad={() => setLoading(false)}
                 onError={() => {
-                  setLoading(false);
                   setIframeError(true);
                 }}
               />
@@ -239,21 +262,18 @@ export default function VisualizarEtiqueta() {
         {/* PDF Viewer - Mobile */}
         <div className="md:hidden">
           <div className="p-4 space-y-4">
-            {!iframeError && !loading ? (
+            {!iframeError && !loading && pdfBlobUrl ? (
               <Card className="overflow-hidden">
                 <object
-                  data={urlEtiqueta}
+                  data={pdfBlobUrl}
                   type="application/pdf"
                   className="h-[60vh] w-full"
-                  onLoad={() => setLoading(false)}
                 >
                   <iframe
-                    src={urlEtiqueta}
+                    src={pdfBlobUrl}
                     className="h-[60vh] w-full border-0"
                     title="Etiqueta de Envio"
-                    onLoad={() => setLoading(false)}
                     onError={() => {
-                      setLoading(false);
                       setIframeError(true);
                     }}
                   />
@@ -278,7 +298,7 @@ export default function VisualizarEtiqueta() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => window.open(urlEtiqueta, '_blank')}
+                  onClick={() => window.open(pdfBlobUrl || urlEtiqueta, '_blank')}
                   className="w-full"
                   size="lg"
                 >
