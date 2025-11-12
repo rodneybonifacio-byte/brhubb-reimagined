@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "./components/ThemeProvider";
 import { AppLayout } from "./components/AppLayout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -19,26 +20,28 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/envios/pre-postagem" element={<PrePostagem />} />
-            <Route path="/envios/nova" element={<NovaPrePostagem />} />
-            <Route path="/simulador-frete" element={<SimuladorFrete />} />
-            <Route path="/acompanhamento/envios" element={<AcompanhamentoEnvios />} />
-            <Route path="/acompanhamento/coletas" element={<Coletas />} />
-            <Route path="/financeiro/faturas" element={<Faturas />} />
-            <Route path="/cadastros/clientes" element={<Clientes />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/envios/pre-postagem" element={<PrePostagem />} />
+              <Route path="/envios/nova" element={<NovaPrePostagem />} />
+              <Route path="/simulador-frete" element={<SimuladorFrete />} />
+              <Route path="/acompanhamento/envios" element={<AcompanhamentoEnvios />} />
+              <Route path="/acompanhamento/coletas" element={<Coletas />} />
+              <Route path="/financeiro/faturas" element={<Faturas />} />
+              <Route path="/cadastros/clientes" element={<Clientes />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

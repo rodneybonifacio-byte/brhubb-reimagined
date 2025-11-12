@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Home,
   Users,
@@ -136,6 +137,8 @@ export function AppLayout() {
           </Button>
 
           <h1 className="flex-1 text-lg font-bold text-primary lg:hidden">BRHUB</h1>
+
+          <ThemeToggle />
 
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
