@@ -11,8 +11,36 @@ export interface LoginResponse {
     id: string;
     name: string;
     email: string;
+    clienteId?: string;
+    cpfCnpj?: string;
   };
 }
+
+export interface UserData {
+  id: string;
+  email: string;
+  clienteId: string;
+  name: string;
+  cpfCnpj?: string;
+}
+
+// Função para decodificar JWT e extrair dados
+const decodeJWT = (token: string): UserData | null => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Erro ao decodificar token:', error);
+    return null;
+  }
+};
 
 export interface CotacaoRequest {
   cepOrigem: string;
@@ -66,7 +94,17 @@ export const auth = {
       throw new Error(error.message || "Erro ao fazer login");
     }
 
-    return response.json();
+    const data = await response.json();
+    
+    // Decodificar o token para extrair dados do usuário
+    if (data.token) {
+      const userData = decodeJWT(data.token);
+      if (userData) {
+        localStorage.setItem("user_data", JSON.stringify(userData));
+      }
+    }
+    
+    return data;
   },
 
   setToken: (token: string) => {
@@ -77,8 +115,14 @@ export const auth = {
     return localStorage.getItem("auth_token");
   },
 
+  getUserData: (): UserData | null => {
+    const userData = localStorage.getItem("user_data");
+    return userData ? JSON.parse(userData) : null;
+  },
+
   removeToken: () => {
     localStorage.removeItem("auth_token");
+    localStorage.removeItem("user_data");
   },
 
   isAuthenticated: (): boolean => {
@@ -89,6 +133,17 @@ export const auth = {
 export const frete = {
   cotacao: async (dados: CotacaoRequest): Promise<CotacaoResponse> => {
     const token = auth.getToken();
+    const userData = auth.getUserData();
+    
+    if (!userData?.clienteId) {
+      throw new Error("Dados do usuário não encontrados. Faça login novamente.");
+    }
+    
+    // Usar o clienteId do usuário logado
+    const requestData = {
+      ...dados,
+      cpfCnpjLoja: userData.clienteId,
+    };
     
     const response = await fetch(`${API_BASE_URL}/frete/cotacao`, {
       method: "POST",
@@ -96,12 +151,12 @@ export const frete = {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify(dados),
+      body: JSON.stringify(requestData),
     });
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: "Erro ao calcular frete" }));
-      throw new Error(error.message || "Erro ao calcular frete");
+      throw new Error(error.message || error.error || "Erro ao calcular frete");
     }
 
     return response.json();

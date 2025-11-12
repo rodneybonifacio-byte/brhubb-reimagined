@@ -83,7 +83,7 @@ export default function SimuladorFrete() {
         },
         logisticaReversa: "N",
         valorDeclarado: parseFloat(valorDeclarado) || 0,
-        cpfCnpjLoja: "0355655109", // Pode ser dinâmico se necessário
+        cpfCnpjLoja: "", // Será preenchido pela função com dados do usuário
       });
 
       setCotacoes(response.data);
