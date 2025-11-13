@@ -21,6 +21,7 @@ import AdminCredits from "./pages/AdminCredits";
 import AdminCostAdjustments from "./pages/AdminCostAdjustments";
 import AdminConfiguracoes from "./pages/AdminConfiguracoes";
 import AdminConfiguracoesGerais from "./pages/AdminConfiguracoesGerais";
+import AdminGestaoClientes from "./pages/AdminGestaoClientes";
 import AtualizarEmail from "./pages/AtualizarEmail";
 import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/configuracoes" element={<Configuracoes />} />
               <Route path="/admin/creditos" element={<AdminCredits />} />
               <Route path="/admin/ajustes-custo" element={<AdminCostAdjustments />} />
+              <Route path="/admin/gestao-clientes" element={<AdminGestaoClientes />} />
               <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
               <Route path="/admin/configuracoes-gerais" element={<AdminConfiguracoesGerais />} />
               <Route path="/atualizar-email" element={<AtualizarEmail />} />

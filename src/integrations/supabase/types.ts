@@ -41,6 +41,36 @@ export type Database = {
         }
         Relationships: []
       }
+      client_settings: {
+        Row: {
+          client_id: string
+          client_name: string
+          created_at: string | null
+          enabled_carriers: Json
+          id: string
+          markup_percentage: number
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          client_name: string
+          created_at?: string | null
+          enabled_carriers?: Json
+          id?: string
+          markup_percentage?: number
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          client_name?: string
+          created_at?: string | null
+          enabled_carriers?: Json
+          id?: string
+          markup_percentage?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       credit_transactions: {
         Row: {
           amount: number
