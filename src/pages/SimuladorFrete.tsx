@@ -51,6 +51,12 @@ export default function SimuladorFrete() {
         // Buscar remetentes primeiro (mais confiável)
         const remetentesData = await remetentes.listar().catch(error => {
           console.error("Erro ao buscar remetentes:", error);
+          
+          // Verificar se é erro 403 (permissão negada)
+          if (error?.message?.includes("403") || error?.message?.includes("Acesso negado")) {
+            toast.error("Sem permissão para acessar remetentes. Verifique suas configurações de acesso.");
+          }
+          
           return {
             data: []
           };
@@ -89,21 +95,27 @@ export default function SimuladorFrete() {
               isPrincipal: true
             });
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error("Erro ao buscar endereço principal:", error);
-          // Continua com apenas os remetentes
+          
+          // Verificar se é erro 403 (permissão negada)
+          if (error?.message?.includes("403") || error?.message?.includes("Acesso negado")) {
+            toast.error("Sem permissão para acessar endereço principal. Verifique suas configurações de acesso.");
+          }
         }
+        
         setOrigens(origensCarregadas);
 
         // Selecionar o primeiro endereço válido automaticamente
         if (origensCarregadas.length > 0) {
           setOrigemSelecionada(origensCarregadas[0]);
+          toast.success("Origem carregada com sucesso!");
         } else {
-          toast.error("Nenhuma origem disponível. Configure um remetente primeiro.");
+          toast.error("Nenhuma origem disponível. Seu usuário não possui permissão para acessar remetentes ou endereços. Entre em contato com o administrador do sistema.");
         }
       } catch (error) {
         console.error("Erro ao carregar origens:", error);
-        toast.error("Erro ao carregar origens disponíveis");
+        toast.error("Erro ao carregar origens. Verifique sua conexão e permissões.");
       } finally {
         setLoadingOrigens(false);
       }
@@ -258,8 +270,12 @@ export default function SimuladorFrete() {
                 <span className="ml-2 text-sm text-muted-foreground">Carregando origens...</span>
               </div>
             ) : origens.length === 0 ? (
-              <div className="mt-2 rounded-lg border border-border bg-muted/30 p-4">
-                <p className="text-sm text-muted-foreground">Nenhuma origem disponível</p>
+              <div className="mt-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+                <p className="text-sm font-medium text-destructive">⚠️ Nenhuma origem disponível</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Seu usuário não possui permissão para acessar endereços de origem. 
+                  Entre em contato com o administrador do sistema para configurar as permissões necessárias.
+                </p>
               </div>
             ) : (
               <>
