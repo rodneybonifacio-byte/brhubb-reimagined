@@ -16,10 +16,12 @@ export default function AdminSyncData() {
   const [syncedClientes, setSyncedClientes] = useState<any[]>([]);
   const [syncedEmissoes, setSyncedEmissoes] = useState<any[]>([]);
   const [syncedUsuarios, setSyncedUsuarios] = useState<any[]>([]);
+  const [tableStats, setTableStats] = useState<any[]>([]);
 
   useEffect(() => {
     loadSyncLogs();
     loadSyncedData();
+    loadTableStats();
 
     // Configurar realtime para sync_logs
     const logsChannel = supabase
@@ -138,6 +140,64 @@ export default function AdminSyncData() {
     setSyncedUsuarios(usuarios || []);
   };
 
+  const loadTableStats = async () => {
+    // Tabelas conhecidas do sistema
+    const tables = ['Cliente', 'Emissao', 'Usuarios'];
+    const stats = [];
+
+    for (const tableName of tables) {
+      let status = 'pending';
+      let recordCount = 0;
+      let lastSync = null;
+      let errors = null;
+
+      // Buscar última sincronização desta tabela nos logs
+      const { data: logs, error: logsError } = await supabase
+        .from('sync_logs' as any)
+        .select('*')
+        .eq('table_name', tableName)
+        .order('started_at', { ascending: false })
+        .limit(1);
+
+      if (!logsError && logs && logs.length > 0) {
+        const log = logs[0] as any;
+        status = log.status || 'pending';
+        lastSync = log.completed_at || log.started_at || null;
+        if (log.error_details) {
+          errors = log.error_details;
+        }
+      }
+
+      // Buscar contagem de registros sincronizados
+      let supabaseTable = '';
+      if (tableName === 'Cliente') {
+        supabaseTable = 'mysql_clientes';
+      } else if (tableName === 'Emissao') {
+        supabaseTable = 'mysql_emissoes';
+      } else if (tableName === 'Usuarios') {
+        supabaseTable = 'mysql_usuarios';
+      }
+
+      if (supabaseTable) {
+        const { count } = await supabase
+          .from(supabaseTable as any)
+          .select('*', { count: 'exact', head: true });
+        recordCount = count || 0;
+      }
+
+      stats.push({
+        name: tableName,
+        supabaseTable,
+        status,
+        recordCount,
+        lastSync,
+        errors
+      });
+    }
+
+    setTableStats(stats);
+  };
+
   const handleSync = async () => {
     setLoading(true);
 
@@ -160,6 +220,7 @@ export default function AdminSyncData() {
         // Recarregar dados
         await loadSyncLogs();
         await loadSyncedData();
+        await loadTableStats();
       }
     } catch (error) {
       console.error('Erro:', error);
@@ -215,13 +276,83 @@ export default function AdminSyncData() {
         </Button>
       </div>
 
-      <Tabs defaultValue="logs" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="logs">Logs de Sincronização</TabsTrigger>
+      <Tabs defaultValue="tabelas" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="tabelas">Status de Tabelas</TabsTrigger>
+          <TabsTrigger value="logs">Logs</TabsTrigger>
           <TabsTrigger value="clientes">Clientes ({syncedClientes.length})</TabsTrigger>
           <TabsTrigger value="emissoes">Emissões ({syncedEmissoes.length})</TabsTrigger>
           <TabsTrigger value="usuarios">Usuários ({syncedUsuarios.length})</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="tabelas" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Status de Sincronização por Tabela</CardTitle>
+              <CardDescription>
+                Visualize o status e estatísticas de todas as tabelas MySQL sincronizadas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {tableStats.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Carregando informações das tabelas...</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tabela MySQL</TableHead>
+                      <TableHead>Tabela Supabase</TableHead>
+                      <TableHead>Registros</TableHead>
+                      <TableHead>Última Sincronização</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Erros</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tableStats.map((table) => (
+                      <TableRow key={table.name}>
+                        <TableCell className="font-medium">{table.name}</TableCell>
+                        <TableCell className="font-mono text-sm">{table.supabaseTable}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{table.recordCount} registros</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {table.lastSync ? (
+                            format(new Date(table.lastSync), "dd/MM/yyyy HH:mm:ss", { locale: ptBR })
+                          ) : (
+                            <span className="text-muted-foreground">Nunca sincronizado</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(table.status)}</TableCell>
+                        <TableCell>
+                          {table.errors && Array.isArray(table.errors) ? (
+                            <div className="space-y-1">
+                              {table.errors.slice(0, 3).map((err: any, idx: number) => (
+                                <div key={idx} className="text-xs text-destructive">
+                                  {err.error || JSON.stringify(err)}
+                                </div>
+                              ))}
+                              {table.errors.length > 3 && (
+                                <div className="text-xs text-muted-foreground">
+                                  +{table.errors.length - 3} mais
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="logs" className="space-y-4">
           <Card>
