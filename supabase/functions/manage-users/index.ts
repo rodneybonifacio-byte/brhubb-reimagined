@@ -52,6 +52,21 @@ Deno.serve(async (req) => {
 
     console.log('Criando usuário:', { email, role, initialCredits })
 
+    // Buscar créditos padrão se não especificado
+    let creditsToAssign = initialCredits || 0
+    if (role === 'cliente' && !initialCredits) {
+      const { data: settingData } = await supabaseClient
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'default_credits')
+        .single()
+      
+      if (settingData) {
+        const settingValue = settingData.setting_value as any
+        creditsToAssign = settingValue.amount || 100
+      }
+    }
+
     // Criar usuário usando service_role
     const { data: newUser, error: createError } = await supabaseClient.auth.admin.createUser({
       email,
@@ -92,7 +107,7 @@ Deno.serve(async (req) => {
         .insert({
           client_id: newUser.user.id,
           client_name: email,
-          credits: initialCredits || 0,
+          credits: creditsToAssign,
         })
 
       if (creditsError) {
@@ -100,7 +115,7 @@ Deno.serve(async (req) => {
         throw new Error('Falha ao criar créditos')
       }
 
-      console.log('Créditos criados:', initialCredits)
+      console.log('Créditos criados:', creditsToAssign)
     }
 
     return new Response(

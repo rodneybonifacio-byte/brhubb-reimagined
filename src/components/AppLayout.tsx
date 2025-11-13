@@ -51,6 +51,7 @@ const menuItems: MenuItem[] = [
 const adminMenuItems: MenuItem[] = [
   { title: "Gerenciar Créditos", url: "/admin/creditos", icon: CreditCard },
   { title: "Ajustes de Custos", url: "/admin/ajustes-custo", icon: Receipt },
+  { title: "Configurações do Sistema", url: "/admin/configuracoes", icon: Settings },
 ];
 
 export function AppLayout() {

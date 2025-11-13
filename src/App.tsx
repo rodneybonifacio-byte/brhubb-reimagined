@@ -19,6 +19,7 @@ import Faturas from "./pages/Faturas";
 import Clientes from "./pages/Clientes";
 import AdminCredits from "./pages/AdminCredits";
 import AdminCostAdjustments from "./pages/AdminCostAdjustments";
+import AdminConfiguracoes from "./pages/AdminConfiguracoes";
 import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/configuracoes" element={<Configuracoes />} />
               <Route path="/admin/creditos" element={<AdminCredits />} />
               <Route path="/admin/ajustes-custo" element={<AdminCostAdjustments />} />
+              <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

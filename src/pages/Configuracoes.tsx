@@ -40,6 +40,7 @@ export default function Configuracoes() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(false);
   const [criando, setCriando] = useState(false);
+  const [defaultCredits, setDefaultCredits] = useState(100);
   
   // Form states
   const [email, setEmail] = useState("");
@@ -49,7 +50,27 @@ export default function Configuracoes() {
 
   useEffect(() => {
     carregarUsuarios();
+    carregarCreditosPadrao();
   }, []);
+
+  const carregarCreditosPadrao = async () => {
+    try {
+      const { data } = await supabase
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'default_credits')
+        .single();
+
+      if (data) {
+        const value = data.setting_value as any;
+        const credits = value.amount || 100;
+        setDefaultCredits(credits);
+        setCreditosInicial(credits.toString());
+      }
+    } catch (error) {
+      console.error('Erro ao carregar créditos padrão:', error);
+    }
+  };
 
   const carregarUsuarios = async () => {
     try {
@@ -109,8 +130,7 @@ export default function Configuracoes() {
     try {
       setCriando(true);
 
-      // Chamar edge function para criar usuário
-      const { data, error } = await supabase.functions.invoke('manage-users', {
+      const { error } = await supabase.functions.invoke('manage-users', {
         body: {
           email,
           password: senha,
@@ -120,7 +140,6 @@ export default function Configuracoes() {
       });
 
       if (error) throw error;
-      if (!data?.success) throw new Error('Falha ao criar usuário');
 
       toast.success(`Usuário criado com sucesso! ${role === 'cliente' ? `Créditos: R$ ${creditosInicial}` : ''}`);
       
@@ -128,7 +147,7 @@ export default function Configuracoes() {
       setEmail('');
       setSenha('');
       setRole('cliente');
-      setCreditosInicial('100');
+      setCreditosInicial(defaultCredits.toString());
       
       // Recarregar lista
       setTimeout(carregarUsuarios, 1000);
