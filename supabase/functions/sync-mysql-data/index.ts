@@ -136,7 +136,6 @@ serve(async (req) => {
           id,
           clienteId,
           codigoObjeto,
-          codigoRastreio,
           status,
           valorFrete,
           transportadora,
@@ -161,7 +160,7 @@ serve(async (req) => {
               mysql_id: emissao.id,
               cliente_id: emissao.clienteId,
               codigo_objeto: emissao.codigoObjeto,
-              codigo_rastreio: emissao.codigoRastreio,
+              codigo_rastreio: emissao.codigoObjeto, // Usar codigoObjeto como rastreio
               status: emissao.status,
               valor_frete: emissao.valorFrete,
               transportadora: emissao.transportadora,
@@ -202,7 +201,6 @@ serve(async (req) => {
           id,
           nome,
           email,
-          cpf,
           telefone,
           clienteId,
           role,
@@ -221,7 +219,7 @@ serve(async (req) => {
               mysql_id: usuario.id,
               nome: usuario.nome,
               email: usuario.email,
-              cpf: usuario.cpf,
+              cpf: null, // CPF não existe na tabela MySQL
               telefone: usuario.telefone,
               cliente_id: usuario.clienteId,
               role: usuario.role,
