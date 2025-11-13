@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,70 +26,69 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { UserPlus, Shield, Trash2 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { UserPlus, CreditCard } from "lucide-react";
 
-interface UserWithRole {
-  user_id: string;
+interface Usuario {
+  id: string;
   email: string;
-  role: string;
   created_at: string;
+  role: string;
+  credits: number;
 }
 
 export default function Configuracoes() {
-  const { isAdmin } = useAuth();
-  const [users, setUsers] = useState<UserWithRole[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [newUserPassword, setNewUserPassword] = useState("");
-  const [newUserRole, setNewUserRole] = useState<"admin" | "cliente">("cliente");
-  const [creating, setCreating] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [criando, setCriando] = useState(false);
+  
+  // Form states
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [role, setRole] = useState<"admin" | "cliente">("cliente");
+  const [creditosInicial, setCreditosInicial] = useState("100");
 
   useEffect(() => {
-    if (isAdmin) {
-      carregarUsuarios();
-    }
-  }, [isAdmin]);
+    carregarUsuarios();
+  }, []);
 
   const carregarUsuarios = async () => {
     try {
       setLoading(true);
       
-      // Buscar usuários com roles
-      const { data, error } = await supabase
+      // Buscar usuários com roles e créditos
+      const { data: rolesData } = await supabase
         .from('user_roles')
-        .select(`
-          user_id,
-          role,
-          created_at
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Para cada usuário, buscar o email do auth.users via RPC ou metadata
-      const usersWithEmails = await Promise.all(
-        (data || []).map(async (userRole) => {
-          // Buscar dados do usuário via Supabase Admin API não é possível no frontend
-          // Então vamos usar uma abordagem alternativa: criar uma view ou usar metadata
-          return {
-            ...userRole,
-            email: `user_${userRole.user_id.substring(0, 8)}@system`, // Placeholder
-          };
-        })
+        .select('user_id, role');
+      
+      const { data: creditsData } = await supabase
+        .from('client_credits')
+        .select('client_id, credits');
+      
+      // Criar mapa de créditos por cliente
+      const creditsMap = new Map(
+        creditsData?.map(c => [c.client_id, c.credits]) || []
       );
-
-      setUsers(usersWithEmails);
+      
+      // Criar mapa de roles por usuário
+      const rolesMap = new Map(
+        rolesData?.map(r => [r.user_id, r.role]) || []
+      );
+      
+      // Buscar dados dos usuários via admin (precisa de service_role)
+      // Como não temos acesso direto ao auth.users, vamos usar o que temos
+      const usuariosComDados: Usuario[] = [];
+      
+      for (const roleData of rolesData || []) {
+        usuariosComDados.push({
+          id: roleData.user_id,
+          email: `Usuário ${roleData.user_id.substring(0, 8)}`,
+          created_at: new Date().toISOString(),
+          role: roleData.role,
+          credits: creditsMap.get(roleData.user_id) || 0,
+        });
+      }
+      
+      setUsuarios(usuariosComDados);
     } catch (error: any) {
       console.error('Erro ao carregar usuários:', error);
       toast.error('Erro ao carregar usuários');
@@ -99,181 +97,191 @@ export default function Configuracoes() {
     }
   };
 
-  const handleCreateUser = async (e: React.FormEvent) => {
+  const handleCriarUsuario = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newUserEmail || !newUserPassword) {
-      toast.error('Preencha todos os campos');
+    if (!email || !senha) {
+      toast.error('Preencha email e senha');
+      return;
+    }
+
+    if (senha.length < 6) {
+      toast.error('A senha deve ter no mínimo 6 caracteres');
       return;
     }
 
     try {
-      setCreating(true);
+      setCriando(true);
 
-      // Criar novo usuário
+      // 1. Criar usuário via Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUserEmail,
-        password: newUserPassword,
+        email,
+        password: senha,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
         },
       });
 
       if (authError) throw authError;
-      if (!authData.user) throw new Error('Usuário não foi criado');
+      if (!authData.user) throw new Error('Falha ao criar usuário');
 
-      // Atribuir role ao usuário
+      console.log('Usuário criado:', authData.user.id);
+
+      // 2. Criar role do usuário
       const { error: roleError } = await supabase
         .from('user_roles')
         .insert({
           user_id: authData.user.id,
-          role: newUserRole,
+          role: role,
         });
 
-      if (roleError) throw roleError;
+      if (roleError) {
+        console.error('Erro ao criar role:', roleError);
+        throw new Error('Falha ao atribuir permissões');
+      }
 
-      // Se o role for cliente, criar entrada de créditos
-      if (newUserRole === 'cliente') {
+      console.log('Role criada:', role);
+
+      // 3. Se for cliente, criar créditos iniciais
+      if (role === 'cliente') {
         const { error: creditsError } = await supabase
           .from('client_credits')
           .insert({
             client_id: authData.user.id,
-            client_name: newUserEmail,
-            credits: 0,
+            client_name: email,
+            credits: parseFloat(creditosInicial) || 0,
           });
 
         if (creditsError) {
           console.error('Erro ao criar créditos:', creditsError);
+          throw new Error('Falha ao criar créditos');
         }
+
+        console.log('Créditos criados:', creditosInicial);
       }
 
-      toast.success('Usuário criado com sucesso!');
-      setNewUserEmail('');
-      setNewUserPassword('');
-      setNewUserRole('cliente');
-      carregarUsuarios();
+      toast.success(`Usuário criado com sucesso! ${role === 'cliente' ? `Créditos: R$ ${creditosInicial}` : ''}`);
+      
+      // Limpar formulário
+      setEmail('');
+      setSenha('');
+      setRole('cliente');
+      setCreditosInicial('100');
+      
+      // Recarregar lista
+      setTimeout(carregarUsuarios, 1000);
     } catch (error: any) {
       console.error('Erro ao criar usuário:', error);
       toast.error(error.message || 'Erro ao criar usuário');
     } finally {
-      setCreating(false);
+      setCriando(false);
     }
   };
 
-  const handleUpdateRole = async (userId: string, newRole: "admin" | "cliente") => {
+  const handleAtualizarCreditos = async (clientId: string, novosCreditos: string) => {
     try {
+      const valor = parseFloat(novosCreditos);
+      if (isNaN(valor)) {
+        toast.error('Valor inválido');
+        return;
+      }
+
       const { error } = await supabase
-        .from('user_roles')
-        .update({ role: newRole })
-        .eq('user_id', userId);
+        .from('client_credits')
+        .update({ credits: valor })
+        .eq('client_id', clientId);
 
       if (error) throw error;
 
-      toast.success('Role atualizada com sucesso!');
+      toast.success('Créditos atualizados!');
       carregarUsuarios();
     } catch (error: any) {
-      console.error('Erro ao atualizar role:', error);
-      toast.error('Erro ao atualizar role');
+      console.error('Erro ao atualizar créditos:', error);
+      toast.error('Erro ao atualizar créditos');
     }
   };
-
-  const handleDeleteUser = async () => {
-    if (!userToDelete) return;
-
-    try {
-      // Remover role do usuário
-      const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userToDelete);
-
-      if (error) throw error;
-
-      toast.success('Usuário removido com sucesso!');
-      setUserToDelete(null);
-      carregarUsuarios();
-    } catch (error: any) {
-      console.error('Erro ao remover usuário:', error);
-      toast.error('Erro ao remover usuário');
-    }
-  };
-
-  if (!isAdmin) {
-    return (
-      <div className="container mx-auto py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Acesso Negado</CardTitle>
-            <CardDescription>
-              Você não tem permissão para acessar esta página.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="container mx-auto py-6 space-y-6 max-w-6xl">
       <div>
-        <h1 className="text-3xl font-bold">Configurações</h1>
+        <h1 className="text-3xl font-bold">Gestão de Usuários</h1>
         <p className="text-muted-foreground mt-2">
-          Gerencie usuários e configurações do sistema
+          Crie novos usuários e gerencie seus créditos
         </p>
       </div>
 
-      {/* Criar Novo Usuário */}
+      {/* Formulário de Criação */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
-            Adicionar Novo Usuário
+            Criar Novo Usuário
           </CardTitle>
           <CardDescription>
-            Crie um novo usuário e atribua uma role
+            Adicione um novo usuário ao sistema com role e créditos iniciais
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCreateUser} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <form onSubmit={handleCriarUsuario} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="usuario@exemplo.com"
-                  value={newUserEmail}
-                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
+              
               <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+                <Label htmlFor="senha">Senha *</Label>
                 <Input
-                  id="password"
+                  id="senha"
                   type="password"
                   placeholder="Mínimo 6 caracteres"
-                  value={newUserPassword}
-                  onChange={(e) => setNewUserPassword(e.target.value)}
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
                   required
                   minLength={6}
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select value={newUserRole} onValueChange={(value) => setNewUserRole(value as "admin" | "cliente")}>
+                <Label htmlFor="role">Perfil *</Label>
+                <Select value={role} onValueChange={(v) => setRole(v as "admin" | "cliente")}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cliente">Cliente</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {role === 'cliente' && (
+                <div className="space-y-2">
+                  <Label htmlFor="creditos">Créditos Iniciais (R$) *</Label>
+                  <Input
+                    id="creditos"
+                    type="number"
+                    step="0.01"
+                    placeholder="100.00"
+                    value={creditosInicial}
+                    onChange={(e) => setCreditosInicial(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
             </div>
-            <Button type="submit" disabled={creating}>
-              {creating ? 'Criando...' : 'Criar Usuário'}
+
+            <Button type="submit" disabled={criando} className="w-full md:w-auto">
+              {criando ? 'Criando...' : 'Criar Usuário'}
             </Button>
           </form>
         </CardContent>
@@ -283,11 +291,11 @@ export default function Configuracoes() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Usuários do Sistema
+            <CreditCard className="h-5 w-5" />
+            Usuários Cadastrados
           </CardTitle>
           <CardDescription>
-            Gerencie roles e permissões dos usuários
+            Visualize e gerencie os créditos dos usuários
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -295,52 +303,51 @@ export default function Configuracoes() {
             <div className="text-center py-8">
               <p className="text-muted-foreground">Carregando usuários...</p>
             </div>
-          ) : users.length === 0 ? (
+          ) : usuarios.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">Nenhum usuário encontrado</p>
+              <p className="text-muted-foreground">Nenhum usuário cadastrado ainda</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ID do Usuário</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Criado em</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Perfil</TableHead>
+                    <TableHead>Créditos (R$)</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.user_id}>
+                  {usuarios.map((usuario) => (
+                    <TableRow key={usuario.id}>
                       <TableCell className="font-mono text-sm">
-                        {user.user_id.substring(0, 8)}...
+                        {usuario.id.substring(0, 8)}...
                       </TableCell>
                       <TableCell>
-                        <Select
-                          value={user.role}
-                          onValueChange={(value) => handleUpdateRole(user.user_id, value as "admin" | "cliente")}
-                        >
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="cliente">Cliente</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <span className={usuario.role === 'admin' ? 'text-orange-600 font-semibold' : ''}>
+                          {usuario.role === 'admin' ? 'Admin' : 'Cliente'}
+                        </span>
                       </TableCell>
                       <TableCell>
-                        {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                        {usuario.role === 'cliente' ? (
+                          <span className="font-semibold">
+                            R$ {usuario.credits.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">N/A</span>
+                        )}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setUserToDelete(user.user_id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                      <TableCell>
+                        {usuario.role === 'cliente' && (
+                          <Input
+                            type="number"
+                            step="0.01"
+                            defaultValue={usuario.credits}
+                            onBlur={(e) => handleAtualizarCreditos(usuario.id, e.target.value)}
+                            className="w-32"
+                          />
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -350,24 +357,6 @@ export default function Configuracoes() {
           )}
         </CardContent>
       </Card>
-
-      {/* Dialog de Confirmação de Exclusão */}
-      <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Remoção</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja remover este usuário? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive">
-              Remover
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
