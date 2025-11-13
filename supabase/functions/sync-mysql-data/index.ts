@@ -46,22 +46,9 @@ serve(async (req) => {
 
     // Obter parâmetros
     const { tableName, action } = await req.json().catch(() => ({ tableName: null, action: 'sync' }));
-
-    // Criar log de sincronização
-    const { data: syncLog, error: logError } = await supabaseClient
-      .from('sync_logs')
-      .insert({
-        sync_type: tableName ? 'single' : 'full',
-        table_name: tableName || 'all',
-        performed_by: user.id,
-        status: 'running'
-      })
-      .select()
-      .single();
-
-    if (logError) {
-      console.error('Error creating sync log:', logError);
-    }
+    
+    // Lista de tabelas mapeadas manualmente
+    const mappedTables = ['Cliente', 'Emissao', 'Usuarios'];
 
     // Conectar ao MySQL
     const mysqlClient = await new Client().connect({
@@ -94,175 +81,233 @@ serve(async (req) => {
       );
     }
 
+    // Criar log de sincronização
+    const { data: syncLog, error: logError } = await supabaseClient
+      .from('sync_logs')
+      .insert({
+        sync_type: tableName ? 'single' : 'full',
+        table_name: tableName || 'all',
+        performed_by: user.id,
+        status: 'running'
+      })
+      .select()
+      .single();
+
+    if (logError) {
+      console.error('Error creating sync log:', logError);
+    }
+
     let totalProcessed = 0;
     let totalSuccess = 0;
     let totalFailed = 0;
     const errors: any[] = [];
 
-    // Sincronizar Clientes
-    if (!tableName || tableName === 'Cliente') {
+    // Se tableName foi especificado, sincronizar apenas essa tabela
+    const tablesToSync = tableName ? [tableName] : mappedTables;
+
+    for (const table of tablesToSync) {
+      console.log(`Syncing table: ${table}`);
+
       try {
-      console.log('Syncing Clientes...');
-      const clientes = await mysqlClient.query(`
-        SELECT 
-          id,
-          nome,
-          email,
-          cpfCnpj,
-          telefone,
-          planoId
-        FROM Cliente
-        LIMIT 100
-      `);
+        // Se a tabela está mapeada, usar lógica específica
+        if (table === 'Cliente') {
+          console.log('Syncing Clientes...');
+          const clientes = await mysqlClient.query(`
+            SELECT 
+              id,
+              nome,
+              email,
+              cpfCnpj,
+              telefone,
+              planoId
+            FROM Cliente
+            LIMIT 100
+          `);
 
-      for (const cliente of clientes) {
-        try {
-          totalProcessed++;
-          
-          const { error } = await supabaseClient
-            .from('mysql_clientes')
-            .upsert({
-              mysql_id: cliente.id,
-              nome: cliente.nome,
-              email: cliente.email,
-              cpf_cnpj: cliente.cpfCnpj,
-              telefone: cliente.telefone,
-              plano_id: cliente.planoId,
-              ativo: true, // Default como ativo
-              synced_at: new Date().toISOString()
-            }, {
-              onConflict: 'mysql_id'
-            });
+          for (const cliente of clientes) {
+            try {
+              totalProcessed++;
+              
+              const { error } = await supabaseClient
+                .from('mysql_clientes')
+                .upsert({
+                  mysql_id: cliente.id,
+                  nome: cliente.nome || null,
+                  email: cliente.email || null,
+                  cpf_cnpj: cliente.cpfCnpj || null,
+                  telefone: cliente.telefone || null,
+                  plano_id: cliente.planoId || null,
+                  ativo: true,
+                  synced_at: new Date().toISOString()
+                }, {
+                  onConflict: 'mysql_id'
+                });
 
-          if (error) {
-            totalFailed++;
-            errors.push({ table: 'Cliente', id: cliente.id, error: error.message });
-          } else {
-            totalSuccess++;
+              if (error) {
+                totalFailed++;
+                errors.push({ table: 'Cliente', id: cliente.id, error: error.message });
+              } else {
+                totalSuccess++;
+              }
+            } catch (err) {
+              totalFailed++;
+              errors.push({ table: 'Cliente', id: cliente.id, error: String(err) });
+            }
           }
-        } catch (err) {
-          totalFailed++;
-          errors.push({ table: 'Cliente', id: cliente.id, error: String(err) });
-        }
-      }
-      
-      console.log(`Clientes synced: ${totalSuccess}/${totalProcessed}`);
-      } catch (error) {
-        console.error('Error syncing Clientes:', error);
-        errors.push({ table: 'Cliente', error: String(error) });
-      }
-    }
-
-    // Sincronizar Emissões
-    if (!tableName || tableName === 'Emissao') {
-      try {
-      console.log('Syncing Emissoes...');
-      const emissoes = await mysqlClient.query(`
-        SELECT *
-        FROM Emissao
-        LIMIT 500
-      `);
-
-      for (const emissao of emissoes) {
-        try {
-          totalProcessed++;
           
-          // Mapear todos os campos disponíveis do MySQL
-          const emissaoData: any = {
-            mysql_id: emissao.id,
-            cliente_id: emissao.clienteId || null,
-            codigo_objeto: emissao.codigoObjeto || null,
-            codigo_rastreio: emissao.codigoRastreio || emissao.codigoObjeto || null,
-            status: emissao.status || null,
-            synced_at: new Date().toISOString()
-          };
+          console.log(`Clientes synced: ${totalSuccess}/${totalProcessed}`);
+        } else if (table === 'Emissao') {
+          console.log('Syncing Emissoes...');
+          const emissoes = await mysqlClient.query(`
+            SELECT *
+            FROM Emissao
+            LIMIT 500
+          `);
 
-          // Adicionar campos opcionais se existirem
-          if (emissao.valorFrete !== undefined) emissaoData.valor_frete = emissao.valorFrete;
-          if (emissao.transportadora !== undefined) emissaoData.transportadora = emissao.transportadora;
-          if (emissao.servico !== undefined) emissaoData.servico = emissao.servico;
-          if (emissao.destinatario !== undefined) emissaoData.destinatario = emissao.destinatario;
-          if (emissao.remetente !== undefined) emissaoData.remetente = emissao.remetente;
-          if (emissao.dimensoes !== undefined) emissaoData.dimensoes = emissao.dimensoes;
-          if (emissao.dataEmissao !== undefined) emissaoData.data_emissao = emissao.dataEmissao;
-          if (emissao.dataPostagem !== undefined) emissaoData.data_postagem = emissao.dataPostagem;
+          for (const emissao of emissoes) {
+            try {
+              totalProcessed++;
+              
+              // Mapear todos os campos disponíveis do MySQL
+              const emissaoData: any = {
+                mysql_id: emissao.id,
+                cliente_id: emissao.clienteId || null,
+                codigo_objeto: emissao.codigoObjeto || null,
+                codigo_rastreio: emissao.codigoRastreio || emissao.codigoObjeto || null,
+                status: emissao.status || null,
+                synced_at: new Date().toISOString()
+              };
 
-          const { error: emissaoError } = await supabaseClient
-            .from('mysql_emissoes')
-            .upsert(emissaoData, {
-              onConflict: 'mysql_id'
-            });
+              // Adicionar campos opcionais se existirem
+              if (emissao.valorFrete !== undefined) emissaoData.valor_frete = emissao.valorFrete;
+              if (emissao.transportadora !== undefined) emissaoData.transportadora = emissao.transportadora;
+              if (emissao.servico !== undefined) emissaoData.servico = emissao.servico;
+              if (emissao.destinatario !== undefined) emissaoData.destinatario = emissao.destinatario;
+              if (emissao.remetente !== undefined) emissaoData.remetente = emissao.remetente;
+              if (emissao.dimensoes !== undefined) emissaoData.dimensoes = emissao.dimensoes;
+              if (emissao.dataEmissao !== undefined) emissaoData.data_emissao = emissao.dataEmissao;
+              if (emissao.dataPostagem !== undefined) emissaoData.data_postagem = emissao.dataPostagem;
 
-          if (emissaoError) {
-            totalFailed++;
-            errors.push({ table: 'Emissao', id: emissao.id, error: emissaoError.message });
-          } else {
-            totalSuccess++;
+              const { error: emissaoError } = await supabaseClient
+                .from('mysql_emissoes')
+                .upsert(emissaoData, {
+                  onConflict: 'mysql_id'
+                });
+
+              if (emissaoError) {
+                totalFailed++;
+                errors.push({ table: 'Emissao', id: emissao.id, error: emissaoError.message });
+              } else {
+                totalSuccess++;
+              }
+            } catch (err) {
+              totalFailed++;
+              errors.push({ table: 'Emissao', id: emissao.id, error: String(err) });
+            }
           }
-        } catch (err) {
-          totalFailed++;
-          errors.push({ table: 'Emissao', id: emissao.id, error: String(err) });
-        }
-      }
-      
-      console.log(`Emissoes synced: ${totalSuccess}/${totalProcessed}`);
-      } catch (error) {
-        console.error('Error syncing Emissoes:', error);
-        errors.push({ table: 'Emissao', error: String(error) });
-      }
-    }
-
-    // Sincronizar Usuários
-    if (!tableName || tableName === 'Usuarios') {
-      try {
-      console.log('Syncing Usuarios...');
-      const usuarios = await mysqlClient.query(`
-        SELECT *
-        FROM Usuarios
-        LIMIT 100
-      `);
-
-      for (const usuario of usuarios) {
-        try {
-          totalProcessed++;
           
-          // Mapear todos os campos disponíveis do MySQL
-          const usuarioData: any = {
-            mysql_id: usuario.id,
-            nome: usuario.nome || null,
-            email: usuario.email || null,
-            cliente_id: usuario.clienteId || null,
-            ativo: usuario.ativo === 1,
-            synced_at: new Date().toISOString()
-          };
+          console.log(`Emissoes synced: ${totalSuccess}/${totalProcessed}`);
+        } else if (table === 'Usuarios') {
+          console.log('Syncing Usuarios...');
+          const usuarios = await mysqlClient.query(`
+            SELECT *
+            FROM Usuarios
+            LIMIT 100
+          `);
 
-          // Adicionar campos opcionais se existirem
-          if (usuario.cpf !== undefined) usuarioData.cpf = usuario.cpf;
-          if (usuario.telefone !== undefined) usuarioData.telefone = usuario.telefone;
-          if (usuario.role !== undefined) usuarioData.role = usuario.role;
+          for (const usuario of usuarios) {
+            try {
+              totalProcessed++;
+              
+              // Mapear todos os campos disponíveis do MySQL
+              const usuarioData: any = {
+                mysql_id: usuario.id,
+                nome: usuario.nome || null,
+                email: usuario.email || null,
+                cliente_id: usuario.clienteId || null,
+                ativo: usuario.ativo === 1,
+                synced_at: new Date().toISOString()
+              };
 
-          const { error: usuarioError } = await supabaseClient
-            .from('mysql_usuarios')
-            .upsert(usuarioData, {
-              onConflict: 'mysql_id'
-            });
+              // Adicionar campos opcionais se existirem
+              if (usuario.cpf !== undefined) usuarioData.cpf = usuario.cpf;
+              if (usuario.telefone !== undefined) usuarioData.telefone = usuario.telefone;
+              if (usuario.role !== undefined) usuarioData.role = usuario.role;
 
-          if (usuarioError) {
-            totalFailed++;
-            errors.push({ table: 'Usuarios', id: usuario.id, error: usuarioError.message });
-          } else {
-            totalSuccess++;
+              const { error: usuarioError } = await supabaseClient
+                .from('mysql_usuarios')
+                .upsert(usuarioData, {
+                  onConflict: 'mysql_id'
+                });
+
+              if (usuarioError) {
+                totalFailed++;
+                errors.push({ table: 'Usuarios', id: usuario.id, error: usuarioError.message });
+              } else {
+                totalSuccess++;
+              }
+            } catch (err) {
+              totalFailed++;
+              errors.push({ table: 'Usuarios', id: usuario.id, error: String(err) });
+            }
           }
-        } catch (err) {
-          totalFailed++;
-          errors.push({ table: 'Usuarios', id: usuario.id, error: String(err) });
+          
+          console.log(`Usuarios synced: ${totalSuccess}/${totalProcessed}`);
+        } else {
+          // Tabela não mapeada - sincronizar dinamicamente para mysql_sync_data
+          console.log(`Syncing unmapped table ${table} to mysql_sync_data`);
+          
+          // Fazer query genérica
+          const rows = await mysqlClient.query(`SELECT * FROM ${table} LIMIT 100`);
+          console.log(`Found ${rows.length} rows in ${table}`);
+          
+          // Inserir/atualizar cada linha
+          for (const row of rows) {
+            try {
+              totalProcessed++;
+              
+              // Tentar identificar o ID (assumindo que existe uma coluna 'id')
+              const mysqlId = row.id || row.ID || Object.values(row)[0];
+              
+              if (!mysqlId) {
+                console.error(`Skipping row without ID in table ${table}`);
+                totalFailed++;
+                continue;
+              }
+
+              const { error: syncError } = await supabaseClient
+                .from('mysql_sync_data')
+                .upsert({
+                  table_name: table,
+                  mysql_id: String(mysqlId),
+                  data: row,
+                  synced_at: new Date().toISOString()
+                }, {
+                  onConflict: 'table_name,mysql_id'
+                });
+
+              if (syncError) {
+                console.error(`Error syncing row from ${table}:`, syncError);
+                totalFailed++;
+                errors.push({
+                  table,
+                  mysqlId,
+                  error: syncError.message
+                });
+              } else {
+                totalSuccess++;
+              }
+            } catch (err) {
+              totalFailed++;
+              errors.push({ table, error: String(err) });
+            }
+          }
+          
+          console.log(`${table} synced: ${totalSuccess}/${totalProcessed}`);
         }
-      }
-      
-      console.log(`Usuarios synced: ${totalSuccess}/${totalProcessed}`);
-      } catch (error) {
-        console.error('Error syncing Usuarios:', error);
-        errors.push({ table: 'Usuarios', error: String(error) });
+      } catch (error: any) {
+        console.error(`Error syncing table ${table}:`, error);
+        errors.push({ table, error: error.message || String(error) });
       }
     }
 

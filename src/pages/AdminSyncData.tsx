@@ -19,6 +19,7 @@ export default function AdminSyncData() {
   const [tableStats, setTableStats] = useState<any[]>([]);
   const [allMysqlTables, setAllMysqlTables] = useState<string[]>([]);
   const [loadingTables, setLoadingTables] = useState(false);
+  const [syncingTable, setSyncingTable] = useState<string | null>(null);
 
   useEffect(() => {
     loadSyncLogs();
@@ -227,6 +228,9 @@ export default function AdminSyncData() {
 
   const handleSync = async (tableName?: string) => {
     setLoading(true);
+    if (tableName) {
+      setSyncingTable(tableName);
+    }
 
     try {
       const { data, error } = await supabase.functions.invoke('sync-mysql-data', {
@@ -256,6 +260,7 @@ export default function AdminSyncData() {
       toast.error('Erro ao sincronizar dados');
     } finally {
       setLoading(false);
+      setSyncingTable(null);
     }
   };
 
@@ -357,23 +362,42 @@ export default function AdminSyncData() {
                   <p>Nenhuma tabela encontrada</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {allMysqlTables.map((tableName) => {
                     const isSynced = ['Cliente', 'Emissao', 'Usuarios'].includes(tableName);
+                    const isSyncing = syncingTable === tableName;
                     return (
                       <div
                         key={tableName}
-                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
                       >
-                        <div className="flex items-center gap-2">
-                          <Database className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-mono text-sm">{tableName}</span>
+                        <div className="flex items-center gap-3 flex-1">
+                          <Database className="h-5 w-5 text-muted-foreground" />
+                          <div className="flex flex-col">
+                            <span className="font-mono text-sm font-medium">{tableName}</span>
+                            {isSynced && (
+                              <span className="text-xs text-muted-foreground">Mapeada</span>
+                            )}
+                          </div>
                         </div>
-                        {isSynced && (
-                          <Badge variant="default" className="text-xs">
-                            Sincronizada
-                          </Badge>
-                        )}
+                        <Button
+                          onClick={() => handleSync(tableName)}
+                          disabled={loading || isSyncing}
+                          size="sm"
+                          variant={isSynced ? "default" : "outline"}
+                        >
+                          {isSyncing ? (
+                            <>
+                              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                              Sincronizando...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="mr-2 h-3 w-3" />
+                              Sincronizar
+                            </>
+                          )}
+                        </Button>
                       </div>
                     );
                   })}
