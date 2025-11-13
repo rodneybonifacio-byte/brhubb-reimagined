@@ -250,36 +250,36 @@ export default function SimuladorFrete() {
       <Card className="border-none shadow-sm">
         <div className="p-6">
           {/* Origem */}
-          {loadingOrigens ? <div className="mb-6 flex items-center justify-center rounded-lg border border-border bg-muted/30 p-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-sm text-muted-foreground">Carregando origens...</span>
-            </div> : origens.length === 0 ? <div className="mb-6 rounded-lg border border-border bg-muted/30 p-4">
-              <p className="text-sm text-muted-foreground">Nenhuma origem disponível</p>
-            </div> : <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-              <DialogTrigger asChild>
-                <div className="mb-6 cursor-pointer rounded-lg border border-border bg-muted/30 p-4 transition-colors hover:bg-muted/50">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3">
-                      <User className="mt-1 h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-semibold">Origem:</p>
-                        <p className="text-sm font-medium">
-                          {origemSelecionada?.nome}
-                          {origemSelecionada?.isPrincipal && <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                              Principal
-                            </span>}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {origemSelecionada?.endereco}
-                        </p>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm" className="text-xs">
-                      Alterar
+          <div className="mb-6">
+            <Label className="text-base">Endereço de Origem</Label>
+            {loadingOrigens ? (
+              <div className="mt-2 flex items-center justify-center rounded-lg border border-border bg-muted/30 p-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">Carregando origens...</span>
+              </div>
+            ) : origens.length === 0 ? (
+              <div className="mt-2 rounded-lg border border-border bg-muted/30 p-4">
+                <p className="text-sm text-muted-foreground">Nenhuma origem disponível</p>
+              </div>
+            ) : (
+              <>
+                <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className="mt-2 h-12 w-full justify-start rounded-lg text-left font-normal"
+                    >
+                      <User className="mr-2 h-5 w-5 text-muted-foreground" />
+                      <span className="flex-1 truncate">
+                        {origemSelecionada?.nome || "Selecionar origem"}
+                      </span>
+                      {origemSelecionada?.isPrincipal && (
+                        <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                          Principal
+                        </span>
+                      )}
                     </Button>
-                  </div>
-                </div>
-              </DialogTrigger>
+                  </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Selecionar Origem</DialogTitle>
@@ -319,7 +319,22 @@ export default function SimuladorFrete() {
                   </button>)}
               </div>
             </DialogContent>
-          </Dialog>}
+          </Dialog>
+          
+          {/* Exibir endereço da origem selecionada */}
+          {origemSelecionada && (
+            <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
+              <p className="text-sm font-medium text-foreground">
+                {origemSelecionada.endereco}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                CEP: {origemSelecionada.cep}
+              </p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
 
           {/* CEP Destino */}
           <div className="mb-6">
