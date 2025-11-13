@@ -9,7 +9,6 @@ import { frete, CotacaoItem } from "@/lib/api";
 import { toast } from "sonner";
 import { CotacaoResultCard } from "@/components/CotacaoResultCard";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import brhubLogo from "@/assets/brhub-logo.png";
 import correiosLogo from "@/assets/correios-logo.png";
 import rodonaves from "@/assets/rodonaves-logo.png";
@@ -28,7 +27,6 @@ interface EnderecoDestino {
   uf: string;
 }
 export default function SimuladorFrete() {
-  const { user } = useAuth();
   const [cep, setCep] = useState("");
   const [altura, setAltura] = useState("");
   const [largura, setLargura] = useState("");
@@ -45,6 +43,7 @@ export default function SimuladorFrete() {
   const [loadingCep, setLoadingCep] = useState(false);
   const [cotacoes, setCotacoes] = useState<CotacaoItem[]>([]);
   const [enderecoDestino, setEnderecoDestino] = useState<EnderecoDestino | null>(null);
+  const [supabaseUserId, setSupabaseUserId] = useState<string | null>(null);
   
   // Estados para novo endereço
   const [novoEndereco, setNovoEndereco] = useState({
@@ -63,10 +62,19 @@ export default function SimuladorFrete() {
   // Carregar origens ao montar o componente
   useEffect(() => {
     const carregarOrigens = async () => {
-      if (!user) return;
-      
       try {
         setLoadingOrigens(true);
+
+        // Obter o usuário autenticado do Supabase
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          toast.error("Usuário não autenticado no Supabase");
+          setLoadingOrigens(false);
+          return;
+        }
+        
+        setSupabaseUserId(user.id);
 
         // Buscar endereços do Supabase
         const { data: origensData, error } = await supabase
@@ -124,7 +132,7 @@ export default function SimuladorFrete() {
       }
     };
     carregarOrigens();
-  }, [user]);
+  }, []);
 
   // Função para formatar CEP
   const formatarCep = (valor: string) => {
@@ -213,7 +221,7 @@ export default function SimuladorFrete() {
   
   // Função para salvar novo endereço
   const handleSalvarNovoEndereco = async () => {
-    if (!user) {
+    if (!supabaseUserId) {
       toast.error("Usuário não autenticado");
       return;
     }
@@ -230,8 +238,8 @@ export default function SimuladorFrete() {
       const { error } = await supabase
         .from('client_origins')
         .insert({
-          user_id: user.id,
-          client_id: user.id, // Pode ser ajustado conforme necessidade
+          user_id: supabaseUserId,
+          client_id: supabaseUserId,
           name: novoEndereco.name,
           cpf_cnpj: novoEndereco.cpf_cnpj,
           cep: novoEndereco.cep,
@@ -267,7 +275,7 @@ export default function SimuladorFrete() {
       const { data: origensData } = await supabase
         .from('client_origins')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', supabaseUserId)
         .order('is_principal', { ascending: false })
         .order('created_at', { ascending: false});
       
