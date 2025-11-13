@@ -143,13 +143,7 @@ serve(async (req) => {
           clienteId,
           codigoObjeto,
           status,
-          transportadora,
-          servico,
-          destinatario,
-          remetente,
-          embalagem,
-          createdAt,
-          dataPostagem
+          createdAt
         FROM Emissao
         ORDER BY createdAt DESC
         LIMIT 500
@@ -165,16 +159,16 @@ serve(async (req) => {
               mysql_id: emissao.id,
               cliente_id: emissao.clienteId,
               codigo_objeto: emissao.codigoObjeto,
-              codigo_rastreio: emissao.codigoObjeto, // Usar codigoObjeto como rastreio
+              codigo_rastreio: emissao.codigoObjeto,
               status: emissao.status,
-              valor_frete: null, // Campo não existe no MySQL
-              transportadora: emissao.transportadora,
-              servico: emissao.servico,
-              destinatario: emissao.destinatario ? JSON.parse(emissao.destinatario) : null,
-              remetente: emissao.remetente ? JSON.parse(emissao.remetente) : null,
-              dimensoes: emissao.embalagem ? JSON.parse(emissao.embalagem) : null,
+              valor_frete: null,
+              transportadora: null,
+              servico: null,
+              destinatario: null,
+              remetente: null,
+              dimensoes: null,
               data_emissao: emissao.createdAt,
-              data_postagem: emissao.dataPostagem,
+              data_postagem: null,
               synced_at: new Date().toISOString()
             }, {
               onConflict: 'mysql_id'
@@ -208,9 +202,7 @@ serve(async (req) => {
           id,
           nome,
           email,
-          telefone,
           clienteId,
-          role,
           ativo
         FROM Usuarios
         LIMIT 100
@@ -226,10 +218,10 @@ serve(async (req) => {
               mysql_id: usuario.id,
               nome: usuario.nome,
               email: usuario.email,
-              cpf: null, // CPF não existe na tabela MySQL
-              telefone: usuario.telefone,
+              cpf: null,
+              telefone: null,
               cliente_id: usuario.clienteId,
-              role: usuario.role,
+              role: null,
               ativo: usuario.ativo === 1,
               synced_at: new Date().toISOString()
             }, {
