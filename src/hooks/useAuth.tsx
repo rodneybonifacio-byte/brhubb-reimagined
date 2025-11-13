@@ -10,6 +10,32 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const forceRefreshAdminStatus = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single();
+      
+      console.log('Force refresh admin status:', { data, error });
+      
+      if (!error && data) {
+        setIsAdmin(data.role === 'admin');
+      }
+    }
+  };
+
+  // Forçar verificação de admin a cada 2 segundos (apenas para debug)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      forceRefreshAdminStatus();
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     const checkAdminStatus = async (userId: string) => {
       try {
