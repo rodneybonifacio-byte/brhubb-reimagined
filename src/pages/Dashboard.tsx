@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Package, Truck, CheckCircle, Clock, TrendingUp, Plus, Calculator, Database } from "lucide-react";
+import { Package, Truck, CheckCircle, Clock, TrendingUp, Plus, Calculator } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const quickStats = [
@@ -44,7 +44,7 @@ export default function Dashboard() {
       <Card className="border-none shadow-sm">
         <CardContent className="p-6">
           <h2 className="mb-4 text-lg font-semibold">Ações rápidas</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Button
               variant="outline"
               className="h-auto flex-col gap-2 py-6"
@@ -87,17 +87,6 @@ export default function Dashboard() {
               <div className="text-center">
                 <p className="font-semibold">Financeiro</p>
                 <p className="text-xs text-muted-foreground">Ver faturas</p>
-              </div>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto flex-col gap-2 py-6 bg-primary/5 border-primary/20"
-              onClick={() => navigate("/admin/sync-mysql")}
-            >
-              <Database className="h-6 w-6 text-primary" />
-              <div className="text-center">
-                <p className="font-semibold text-primary">Testar MySQL</p>
-                <p className="text-xs text-muted-foreground">Sincronização</p>
               </div>
             </Button>
           </div>
