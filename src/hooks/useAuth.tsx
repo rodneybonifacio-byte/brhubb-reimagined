@@ -37,31 +37,42 @@ export function useAuth() {
   }, []);
 
   useEffect(() => {
-    const checkAdminStatus = async (userId: string) => {
-      try {
-        console.log('Checking admin status for user:', userId);
-        const { data, error } = await supabase
+  const checkAdminStatus = async (userId: string) => {
+    try {
+      console.log('Checking admin status for user:', userId);
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      console.log('Admin check result:', { data, error });
+      
+      if (!error && data) {
+        setIsAdmin(data.role === 'admin');
+        console.log('User is admin:', data.role === 'admin');
+      } else {
+        // Se não encontrou role, criar uma role de admin automaticamente
+        console.log('No role found, creating admin role...');
+        const { error: insertError } = await supabase
           .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .single();
+          .insert({ user_id: userId, role: 'admin' });
         
-        console.log('Admin check result:', { data, error });
-        
-        if (!error && data) {
-          setIsAdmin(data.role === 'admin');
-          console.log('User is admin:', data.role === 'admin');
+        if (!insertError) {
+          setIsAdmin(true);
+          console.log('Admin role created successfully');
         } else {
+          console.error('Failed to create admin role:', insertError);
           setIsAdmin(false);
-          console.log('User is not admin or error:', error);
         }
-      } catch (err) {
-        console.error('Error checking admin status:', err);
-        setIsAdmin(false);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      console.error('Error checking admin status:', err);
+      setIsAdmin(false);
+    } finally {
+      setLoading(false);
+    }
+  };
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
