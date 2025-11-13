@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.update-user-email]
 verify_jwt = true
+
+[functions.sync-mysql]
+verify_jwt = true
