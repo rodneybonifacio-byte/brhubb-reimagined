@@ -44,12 +44,15 @@ serve(async (req) => {
       throw new Error('Sem permissão de administrador');
     }
 
+    // Obter parâmetro de tabela específica (se fornecido)
+    const { tableName } = await req.json().catch(() => ({ tableName: null }));
+
     // Criar log de sincronização
     const { data: syncLog, error: logError } = await supabaseClient
       .from('sync_logs')
       .insert({
-        sync_type: 'full',
-        table_name: 'all',
+        sync_type: tableName ? 'single' : 'full',
+        table_name: tableName || 'all',
         performed_by: user.id,
         status: 'running'
       })
@@ -77,7 +80,8 @@ serve(async (req) => {
     const errors: any[] = [];
 
     // Sincronizar Clientes
-    try {
+    if (!tableName || tableName === 'Cliente') {
+      try {
       console.log('Syncing Clientes...');
       const clientes = await mysqlClient.query(`
         SELECT 
@@ -123,13 +127,15 @@ serve(async (req) => {
       }
       
       console.log(`Clientes synced: ${totalSuccess}/${totalProcessed}`);
-    } catch (error) {
-      console.error('Error syncing Clientes:', error);
-      errors.push({ table: 'Cliente', error: String(error) });
+      } catch (error) {
+        console.error('Error syncing Clientes:', error);
+        errors.push({ table: 'Cliente', error: String(error) });
+      }
     }
 
     // Sincronizar Emissões
-    try {
+    if (!tableName || tableName === 'Emissao') {
+      try {
       console.log('Syncing Emissoes...');
       const emissoes = await mysqlClient.query(`
         SELECT 
@@ -188,13 +194,15 @@ serve(async (req) => {
       }
       
       console.log(`Emissoes synced: ${totalSuccess}/${totalProcessed}`);
-    } catch (error) {
-      console.error('Error syncing Emissoes:', error);
-      errors.push({ table: 'Emissao', error: String(error) });
+      } catch (error) {
+        console.error('Error syncing Emissoes:', error);
+        errors.push({ table: 'Emissao', error: String(error) });
+      }
     }
 
     // Sincronizar Usuários
-    try {
+    if (!tableName || tableName === 'Usuarios') {
+      try {
       console.log('Syncing Usuarios...');
       const usuarios = await mysqlClient.query(`
         SELECT 
@@ -242,9 +250,10 @@ serve(async (req) => {
       }
       
       console.log(`Usuarios synced: ${totalSuccess}/${totalProcessed}`);
-    } catch (error) {
-      console.error('Error syncing Usuarios:', error);
-      errors.push({ table: 'Usuarios', error: String(error) });
+      } catch (error) {
+        console.error('Error syncing Usuarios:', error);
+        errors.push({ table: 'Usuarios', error: String(error) });
+      }
     }
 
     await mysqlClient.close();

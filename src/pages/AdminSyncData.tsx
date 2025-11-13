@@ -198,11 +198,13 @@ export default function AdminSyncData() {
     setTableStats(stats);
   };
 
-  const handleSync = async () => {
+  const handleSync = async (tableName?: string) => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('sync-mysql-data');
+      const { data, error } = await supabase.functions.invoke('sync-mysql-data', {
+        body: tableName ? { tableName } : {}
+      });
 
       if (error) {
         console.error('Erro ao sincronizar:', error);
@@ -258,7 +260,7 @@ export default function AdminSyncData() {
           </p>
         </div>
         <Button 
-          onClick={handleSync}
+          onClick={() => handleSync()}
           disabled={loading}
           size="lg"
         >
@@ -270,7 +272,7 @@ export default function AdminSyncData() {
           ) : (
             <>
               <RefreshCw className="mr-2 h-4 w-4" />
-              Sincronizar Agora
+              Sincronizar Tudo
             </>
           )}
         </Button>
@@ -309,6 +311,7 @@ export default function AdminSyncData() {
                       <TableHead>Última Sincronização</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Erros</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -344,6 +347,21 @@ export default function AdminSyncData() {
                           ) : (
                             <span className="text-muted-foreground text-sm">-</span>
                           )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSync(table.name)}
+                            disabled={loading}
+                          >
+                            {loading ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-3 w-3" />
+                            )}
+                            <span className="ml-2">Sincronizar</span>
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
