@@ -147,24 +147,29 @@ serve(async (req) => {
         try {
           totalProcessed++;
           
+          // Mapear todos os campos disponíveis do MySQL
+          const emissaoData: any = {
+            mysql_id: emissao.id,
+            cliente_id: emissao.clienteId || null,
+            codigo_objeto: emissao.codigoObjeto || null,
+            codigo_rastreio: emissao.codigoRastreio || emissao.codigoObjeto || null,
+            status: emissao.status || null,
+            synced_at: new Date().toISOString()
+          };
+
+          // Adicionar campos opcionais se existirem
+          if (emissao.valorFrete !== undefined) emissaoData.valor_frete = emissao.valorFrete;
+          if (emissao.transportadora !== undefined) emissaoData.transportadora = emissao.transportadora;
+          if (emissao.servico !== undefined) emissaoData.servico = emissao.servico;
+          if (emissao.destinatario !== undefined) emissaoData.destinatario = emissao.destinatario;
+          if (emissao.remetente !== undefined) emissaoData.remetente = emissao.remetente;
+          if (emissao.dimensoes !== undefined) emissaoData.dimensoes = emissao.dimensoes;
+          if (emissao.dataEmissao !== undefined) emissaoData.data_emissao = emissao.dataEmissao;
+          if (emissao.dataPostagem !== undefined) emissaoData.data_postagem = emissao.dataPostagem;
+
           const { error: emissaoError } = await supabaseClient
             .from('mysql_emissoes')
-            .upsert({
-              mysql_id: emissao.id,
-              cliente_id: emissao.clienteId || null,
-              codigo_objeto: emissao.codigoObjeto || null,
-              codigo_rastreio: emissao.codigoObjeto || null,
-              status: emissao.status || null,
-              valor_frete: null,
-              transportadora: null,
-              servico: null,
-              destinatario: null,
-              remetente: null,
-              dimensoes: null,
-              data_emissao: null,
-              data_postagem: null,
-              synced_at: new Date().toISOString()
-            }, {
+            .upsert(emissaoData, {
               onConflict: 'mysql_id'
             });
 
@@ -201,19 +206,24 @@ serve(async (req) => {
         try {
           totalProcessed++;
           
+          // Mapear todos os campos disponíveis do MySQL
+          const usuarioData: any = {
+            mysql_id: usuario.id,
+            nome: usuario.nome || null,
+            email: usuario.email || null,
+            cliente_id: usuario.clienteId || null,
+            ativo: usuario.ativo === 1,
+            synced_at: new Date().toISOString()
+          };
+
+          // Adicionar campos opcionais se existirem
+          if (usuario.cpf !== undefined) usuarioData.cpf = usuario.cpf;
+          if (usuario.telefone !== undefined) usuarioData.telefone = usuario.telefone;
+          if (usuario.role !== undefined) usuarioData.role = usuario.role;
+
           const { error: usuarioError } = await supabaseClient
             .from('mysql_usuarios')
-            .upsert({
-              mysql_id: usuario.id,
-              nome: usuario.nome || null,
-              email: usuario.email || null,
-              cpf: null,
-              telefone: null,
-              cliente_id: usuario.clienteId || null,
-              role: null,
-              ativo: usuario.ativo === 1,
-              synced_at: new Date().toISOString()
-            }, {
+            .upsert(usuarioData, {
               onConflict: 'mysql_id'
             });
 
