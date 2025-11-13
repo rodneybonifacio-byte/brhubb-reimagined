@@ -13,6 +13,28 @@ import { useNavigate } from "react-router-dom";
 import { remetentes, frete, emissoes, auth, type RemetenteItem, type CotacaoItem } from "@/lib/api";
 import { CotacaoResultCard } from "@/components/CotacaoResultCard";
 import { getClientCredits, ensureClientCreditsExist, consumeCredit } from "@/lib/credits";
+import { z } from "zod";
+
+const destinatarioSchema = z.object({
+  nome: z.string().trim().min(3, "Nome deve ter no mínimo 3 caracteres").max(100, "Nome deve ter no máximo 100 caracteres"),
+  cpf: z.string().trim().regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/, "CPF inválido"),
+  telefone: z.string().trim().regex(/^\(\d{2}\)\s?\d{4,5}-?\d{4}$|^\d{10,11}$/, "Telefone inválido"),
+  cep: z.string().trim().regex(/^\d{5}-?\d{3}$/, "CEP inválido"),
+  logradouro: z.string().trim().min(3, "Logradouro é obrigatório").max(200, "Logradouro deve ter no máximo 200 caracteres"),
+  numero: z.string().trim().min(1, "Número é obrigatório").max(10, "Número deve ter no máximo 10 caracteres"),
+  complemento: z.string().trim().max(100, "Complemento deve ter no máximo 100 caracteres").optional(),
+  bairro: z.string().trim().min(2, "Bairro é obrigatório").max(100, "Bairro deve ter no máximo 100 caracteres"),
+  cidade: z.string().trim().min(2, "Cidade é obrigatória").max(100, "Cidade deve ter no máximo 100 caracteres"),
+  uf: z.string().trim().length(2, "UF deve ter 2 caracteres")
+});
+
+const dimensoesSchema = z.object({
+  peso: z.number().positive("Peso deve ser maior que zero").max(300, "Peso deve ser no máximo 300kg"),
+  altura: z.number().positive("Altura deve ser maior que zero").max(200, "Altura deve ser no máximo 200cm"),
+  largura: z.number().positive("Largura deve ser maior que zero").max(200, "Largura deve ser no máximo 200cm"),
+  comprimento: z.number().positive("Comprimento deve ser maior que zero").max(200, "Comprimento deve ser no máximo 200cm"),
+  valorDeclarado: z.number().min(0, "Valor declarado não pode ser negativo").max(100000, "Valor declarado deve ser no máximo R$ 100.000")
+});
 
 export default function NovaPrePostagem() {
   const navigate = useNavigate();
@@ -122,13 +144,24 @@ export default function NovaPrePostagem() {
       return;
     }
 
-    if (!peso || !altura || !largura || !comprimento) {
-      toast.error("Preencha as dimensões do pacote");
+    // Validar dimensões
+    const dimensoesValidation = dimensoesSchema.safeParse({
+      peso: parseFloat(peso),
+      altura: parseFloat(altura),
+      largura: parseFloat(largura),
+      comprimento: parseFloat(comprimento),
+      valorDeclarado: parseFloat(valorDeclarado)
+    });
+
+    if (!dimensoesValidation.success) {
+      const errors = dimensoesValidation.error.errors.map(err => err.message).join(", ");
+      toast.error(errors);
       return;
     }
 
-    if (!cepDestinatario) {
-      toast.error("Preencha o CEP de destino");
+    // Validar CEP
+    if (!cepDestinatario || !/^\d{5}-?\d{3}$/.test(cepDestinatario)) {
+      toast.error("CEP de destino inválido");
       return;
     }
 
@@ -172,8 +205,23 @@ export default function NovaPrePostagem() {
       return;
     }
 
-    if (!nomeDestinatario || !cpfDestinatario || !telefoneDestinatario) {
-      toast.error("Preencha todos os dados do destinatário");
+    // Validar dados do destinatário
+    const destinatarioValidation = destinatarioSchema.safeParse({
+      nome: nomeDestinatario,
+      cpf: cpfDestinatario,
+      telefone: telefoneDestinatario,
+      cep: cepDestinatario,
+      logradouro: logradouroDestinatario,
+      numero: numeroDestinatario,
+      complemento: complementoDestinatario,
+      bairro: bairroDestinatario,
+      cidade: cidadeDestinatario,
+      uf: ufDestinatario
+    });
+
+    if (!destinatarioValidation.success) {
+      const errors = destinatarioValidation.error.errors.map(err => err.message).join(", ");
+      toast.error(errors);
       return;
     }
 

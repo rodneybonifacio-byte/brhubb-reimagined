@@ -28,6 +28,15 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Settings, Percent, Truck, Save, Plus } from "lucide-react";
+import { z } from "zod";
+
+const clientSettingSchema = z.object({
+  markup_percentage: z.number()
+    .min(0, "Markup não pode ser negativo")
+    .max(1000, "Markup deve ser no máximo 1000%"),
+  enabled_carriers: z.array(z.string())
+    .min(1, "Selecione pelo menos uma transportadora")
+});
 
 interface ClientSetting {
   id: string;
@@ -127,16 +136,19 @@ export default function AdminGestaoClientes() {
   const handleSalvarConfiguracoes = async () => {
     if (!editingClient) return;
 
-    if (selectedCarriers.length === 0) {
-      toast.error('Selecione pelo menos uma transportadora');
+    // Validação com Zod
+    const validation = clientSettingSchema.safeParse({
+      markup_percentage: parseFloat(markupValue),
+      enabled_carriers: selectedCarriers
+    });
+
+    if (!validation.success) {
+      const errors = validation.error.errors.map(err => err.message).join(", ");
+      toast.error(errors);
       return;
     }
 
     const markup = parseFloat(markupValue);
-    if (isNaN(markup) || markup < 0) {
-      toast.error('Porcentagem de markup inválida');
-      return;
-    }
 
     try {
       const { error } = await supabase

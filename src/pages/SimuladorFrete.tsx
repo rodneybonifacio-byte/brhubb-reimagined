@@ -12,6 +12,27 @@ import { supabase } from "@/integrations/supabase/client";
 import brhubLogo from "@/assets/brhub-logo.png";
 import correiosLogo from "@/assets/correios-logo.png";
 import rodonaves from "@/assets/rodonaves-logo.png";
+import { z } from "zod";
+
+const cotacaoSchema = z.object({
+  cep: z.string().trim().regex(/^\d{5}-?\d{3}$/, "CEP inválido"),
+  altura: z.number().positive("Altura deve ser maior que zero").max(200, "Altura deve ser no máximo 200cm"),
+  largura: z.number().positive("Largura deve ser maior que zero").max(200, "Largura deve ser no máximo 200cm"),
+  comprimento: z.number().positive("Comprimento deve ser maior que zero").max(200, "Comprimento deve ser no máximo 200cm"),
+  peso: z.number().positive("Peso deve ser maior que zero").max(300, "Peso deve ser no máximo 300kg"),
+  valorDeclarado: z.number().min(0, "Valor declarado não pode ser negativo").max(100000, "Valor deve ser no máximo R$ 100.000")
+});
+
+const enderecoSchema = z.object({
+  name: z.string().trim().min(3, "Nome deve ter no mínimo 3 caracteres").max(100, "Nome deve ter no máximo 100 caracteres"),
+  cpf_cnpj: z.string().trim().min(11, "CPF/CNPJ inválido").max(18, "CPF/CNPJ inválido"),
+  cep: z.string().trim().regex(/^\d{5}-?\d{3}$/, "CEP inválido"),
+  logradouro: z.string().trim().min(3, "Logradouro é obrigatório").max(200, "Logradouro deve ter no máximo 200 caracteres"),
+  numero: z.string().trim().min(1, "Número é obrigatório").max(10, "Número deve ter no máximo 10 caracteres"),
+  bairro: z.string().trim().min(2, "Bairro é obrigatório").max(100, "Bairro deve ter no máximo 100 caracteres"),
+  localidade: z.string().trim().min(2, "Cidade é obrigatória").max(100, "Cidade deve ter no máximo 100 caracteres"),
+  uf: z.string().trim().length(2, "UF deve ter 2 caracteres")
+});
 interface OrigemItem {
   id: string;
   nome: string;
@@ -226,11 +247,11 @@ export default function SimuladorFrete() {
       return;
     }
     
-    // Validação
-    if (!novoEndereco.name || !novoEndereco.cpf_cnpj || !novoEndereco.cep || 
-        !novoEndereco.logradouro || !novoEndereco.numero || !novoEndereco.bairro ||
-        !novoEndereco.localidade || !novoEndereco.uf) {
-      toast.error("Preencha todos os campos obrigatórios");
+    // Validação com Zod
+    const validation = enderecoSchema.safeParse(novoEndereco);
+    if (!validation.success) {
+      const errors = validation.error.errors.map(err => err.message).join(", ");
+      toast.error(errors);
       return;
     }
     
@@ -311,15 +332,28 @@ export default function SimuladorFrete() {
   };
   
   const handleCalcularFrete = async () => {
-    // Validação
+    // Validação de origem
     if (!origemSelecionada) {
       toast.error("Selecione uma origem");
       return;
     }
-    if (!cep || !altura || !largura || !comprimento || !peso) {
-      toast.error("Por favor, preencha todos os campos obrigatórios");
+
+    // Validação com Zod
+    const validation = cotacaoSchema.safeParse({
+      cep,
+      altura: parseFloat(altura),
+      largura: parseFloat(largura),
+      comprimento: parseFloat(comprimento),
+      peso: parseFloat(peso),
+      valorDeclarado: parseFloat(valorDeclarado || "0")
+    });
+
+    if (!validation.success) {
+      const errors = validation.error.errors.map(err => err.message).join(", ");
+      toast.error(errors);
       return;
     }
+
     setLoading(true);
     setCotacoes([]);
     try {

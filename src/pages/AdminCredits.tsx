@@ -12,6 +12,13 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { z } from "zod";
+
+const creditSchema = z.object({
+  amount: z.number()
+    .positive("Valor deve ser maior que zero")
+    .max(1000000, "Valor deve ser no máximo 1.000.000")
+});
 
 interface ClientCredit {
   id: string;
@@ -96,16 +103,20 @@ export default function AdminCredits() {
   };
 
   const handleAddCredits = async () => {
-    if (!selectedClient || !creditAmount) {
-      toast.error("Preencha todos os campos");
+    if (!selectedClient) return;
+
+    // Validação com Zod
+    const validation = creditSchema.safeParse({
+      amount: parseFloat(creditAmount)
+    });
+
+    if (!validation.success) {
+      const errors = validation.error.errors.map(err => err.message).join(", ");
+      toast.error(errors);
       return;
     }
 
     const amount = parseFloat(creditAmount);
-    if (isNaN(amount) || amount <= 0) {
-      toast.error("Valor inválido");
-      return;
-    }
 
     try {
       setProcessing(true);
@@ -149,16 +160,20 @@ export default function AdminCredits() {
   };
 
   const handleRemoveCredits = async () => {
-    if (!selectedClient || !creditAmount) {
-      toast.error("Preencha todos os campos");
+    if (!selectedClient) return;
+
+    // Validação com Zod
+    const validation = creditSchema.safeParse({
+      amount: parseFloat(creditAmount)
+    });
+
+    if (!validation.success) {
+      const errors = validation.error.errors.map(err => err.message).join(", ");
+      toast.error(errors);
       return;
     }
 
     const amount = parseFloat(creditAmount);
-    if (isNaN(amount) || amount <= 0) {
-      toast.error("Valor inválido");
-      return;
-    }
 
     if (amount > parseFloat(selectedClient.credits.toString())) {
       toast.error("Valor maior que o saldo disponível");
