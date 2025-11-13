@@ -58,33 +58,29 @@ export default function Configuracoes() {
       // Buscar usuários com roles e créditos
       const { data: rolesData } = await supabase
         .from('user_roles')
-        .select('user_id, role');
+        .select('user_id, role, created_at');
       
       const { data: creditsData } = await supabase
         .from('client_credits')
-        .select('client_id, credits');
+        .select('client_id, client_name, credits');
       
       // Criar mapa de créditos por cliente
       const creditsMap = new Map(
-        creditsData?.map(c => [c.client_id, c.credits]) || []
+        creditsData?.map(c => [c.client_id, { credits: c.credits, name: c.client_name }]) || []
       );
       
-      // Criar mapa de roles por usuário
-      const rolesMap = new Map(
-        rolesData?.map(r => [r.user_id, r.role]) || []
-      );
-      
-      // Buscar dados dos usuários via admin (precisa de service_role)
-      // Como não temos acesso direto ao auth.users, vamos usar o que temos
+      // Montar lista de usuários
       const usuariosComDados: Usuario[] = [];
       
       for (const roleData of rolesData || []) {
+        const creditInfo = creditsMap.get(roleData.user_id);
+        
         usuariosComDados.push({
           id: roleData.user_id,
-          email: `Usuário ${roleData.user_id.substring(0, 8)}`,
-          created_at: new Date().toISOString(),
+          email: creditInfo?.name || roleData.user_id.substring(0, 8),
+          created_at: roleData.created_at,
           role: roleData.role,
-          credits: creditsMap.get(roleData.user_id) || 0,
+          credits: creditInfo?.credits || 0,
         });
       }
       
@@ -312,7 +308,7 @@ export default function Configuracoes() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ID</TableHead>
+                    <TableHead>Usuário</TableHead>
                     <TableHead>Perfil</TableHead>
                     <TableHead>Créditos (R$)</TableHead>
                     <TableHead>Ações</TableHead>
@@ -321,8 +317,13 @@ export default function Configuracoes() {
                 <TableBody>
                   {usuarios.map((usuario) => (
                     <TableRow key={usuario.id}>
-                      <TableCell className="font-mono text-sm">
-                        {usuario.id.substring(0, 8)}...
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{usuario.email}</p>
+                          <p className="text-xs text-muted-foreground font-mono">
+                            ID: {usuario.id.substring(0, 8)}...
+                          </p>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <span className={usuario.role === 'admin' ? 'text-orange-600 font-semibold' : ''}>
