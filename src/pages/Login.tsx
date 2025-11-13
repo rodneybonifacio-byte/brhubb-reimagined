@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { auth } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -34,10 +35,50 @@ export default function Login() {
     setLoading(true);
 
     try {
+      // 1. Login na API externa
       const response = await auth.login({ email, password });
       
       // Salvar token no localStorage
       auth.setToken(response.token);
+      
+      // 2. Fazer login/signup no Supabase
+      try {
+        // Tentar fazer login primeiro
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        // Se o usuário não existe, criar conta
+        if (signInError?.message?.includes("Invalid login credentials")) {
+          const { error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                email: email
+              }
+            }
+          });
+          
+          if (signUpError) {
+            console.error("Erro ao criar usuário no Supabase:", signUpError);
+            // Não bloquear login se falhar - usuário já está autenticado na API
+          } else {
+            // Após criar, fazer login
+            await supabase.auth.signInWithPassword({
+              email,
+              password
+            });
+          }
+        } else if (signInError) {
+          console.error("Erro ao fazer login no Supabase:", signInError);
+          // Não bloquear login se falhar - usuário já está autenticado na API
+        }
+      } catch (supabaseError) {
+        console.error("Erro ao autenticar no Supabase:", supabaseError);
+        // Não bloquear login se falhar - usuário já está autenticado na API
+      }
       
       toast.success("Login realizado com sucesso!");
       navigate("/");
