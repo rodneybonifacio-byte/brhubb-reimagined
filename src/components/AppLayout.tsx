@@ -4,6 +4,7 @@ import { auth } from "@/lib/api";
 import { NavLink } from "@/components/NavLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
+import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import {
   Home,
   Users,
@@ -60,6 +61,9 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  
+  // Monitorar expiração do token e avisar o usuário
+  useTokenRefresh();
 
   const handleLogout = () => {
     auth.removeToken();

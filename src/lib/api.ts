@@ -23,6 +23,14 @@ const handleUnauthorized = () => {
 
 // Função helper para fazer requisições com tratamento de erro 401
 const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+  // Verificar se o token está expirado ou próximo de expirar
+  const token = auth.getToken();
+  if (token && isTokenExpired(token)) {
+    // Token expirado - redirecionar para login
+    handleUnauthorized();
+    throw new Error("Sessão expirada. Faça login novamente.");
+  }
+  
   const response = await fetch(url, options);
   
   // Se receber 401, token expirado - fazer logout
@@ -59,7 +67,7 @@ export interface UserData {
 }
 
 // Função para decodificar JWT e extrair dados
-const decodeJWT = (token: string): UserData | null => {
+const decodeJWT = (token: string): any | null => {
   try {
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -71,8 +79,37 @@ const decodeJWT = (token: string): UserData | null => {
     );
     return JSON.parse(jsonPayload);
   } catch (error) {
-    console.error('Erro ao decodificar token:', error);
     return null;
+  }
+};
+
+// Verificar se o token está próximo de expirar (menos de 30 minutos)
+const isTokenExpiringSoon = (token: string): boolean => {
+  try {
+    const decoded = decodeJWT(token);
+    if (!decoded || !decoded.exp) return true;
+    
+    const expirationTime = decoded.exp * 1000; // Converter para milissegundos
+    const now = Date.now();
+    const timeUntilExpiration = expirationTime - now;
+    const thirtyMinutes = 30 * 60 * 1000;
+    
+    return timeUntilExpiration < thirtyMinutes;
+  } catch {
+    return true;
+  }
+};
+
+// Verificar se o token está expirado
+const isTokenExpired = (token: string): boolean => {
+  try {
+    const decoded = decodeJWT(token);
+    if (!decoded || !decoded.exp) return true;
+    
+    const expirationTime = decoded.exp * 1000;
+    return Date.now() >= expirationTime;
+  } catch {
+    return true;
   }
 };
 
@@ -165,7 +202,38 @@ export const auth = {
   },
 
   isAuthenticated: (): boolean => {
-    return !!localStorage.getItem("auth_token");
+    const token = localStorage.getItem("auth_token");
+    if (!token) return false;
+    
+    // Verificar se o token está expirado
+    return !isTokenExpired(token);
+  },
+  
+  // Verificar se o token precisa ser renovado
+  shouldRefreshToken: (): boolean => {
+    const token = localStorage.getItem("auth_token");
+    if (!token) return false;
+    
+    return isTokenExpiringSoon(token);
+  },
+  
+  // Obter tempo restante até expiração (em minutos)
+  getTokenExpirationMinutes: (): number | null => {
+    const token = localStorage.getItem("auth_token");
+    if (!token) return null;
+    
+    try {
+      const decoded = decodeJWT(token);
+      if (!decoded || !decoded.exp) return null;
+      
+      const expirationTime = decoded.exp * 1000;
+      const now = Date.now();
+      const timeUntilExpiration = expirationTime - now;
+      
+      return Math.floor(timeUntilExpiration / (60 * 1000));
+    } catch {
+      return null;
+    }
   },
 };
 
