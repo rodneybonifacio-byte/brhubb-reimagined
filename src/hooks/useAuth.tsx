@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
-import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { auth } from "@/lib/api";
+
+interface User {
+  id: string;
+  email: string;
+}
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -17,6 +21,7 @@ export function useAuth() {
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
+        .eq('role', 'admin')
         .maybeSingle();
       
       console.log('Admin check result:', { data, error });
@@ -38,48 +43,54 @@ export function useAuth() {
   };
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
-        setSession(session);
-        setUser(session?.user ?? null);
+    const checkAuth = async () => {
+      try {
+        // Pegar token da API externa
+        const token = auth.getToken();
         
-        if (session?.user) {
-          await checkAdminStatus(session.user.id);
-          setLoading(false);
-        } else {
+        if (!token) {
+          setUser(null);
           setIsAdmin(false);
           setLoading(false);
+          return;
         }
-      }
-    );
 
-    // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log('Initial session check:', session?.user?.id);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await checkAdminStatus(session.user.id);
-        setLoading(false);
-      } else {
+        // Decodificar token JWT para extrair dados do usuário
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userId = payload.id; // ID do usuário da API externa
+        const userEmail = payload.email;
+
+        console.log('User from token:', { userId, userEmail });
+
+        setUser({
+          id: userId,
+          email: userEmail
+        });
+
+        // Verificar se é admin no Supabase usando o ID da API externa
+        await checkAdminStatus(userId);
+      } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
+        setUser(null);
+        setIsAdmin(false);
+      } finally {
         setLoading(false);
       }
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    checkAuth();
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/login');
+    auth.removeToken();
+    setUser(null);
+    setIsAdmin(false);
+    navigate("/login", { replace: true });
   };
 
   return {
     user,
-    session,
+    session: null, // Mantido para compatibilidade
     isAdmin,
     loading,
     signOut
