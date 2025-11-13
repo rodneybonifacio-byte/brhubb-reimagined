@@ -39,6 +39,10 @@ export default function PrePostagem() {
   const carregarEmissoes = async () => {
     try {
       setLoading(true);
+      
+      // SEGURANÇA: A API externa (BRHUB) filtra automaticamente as emissões
+      // pelo usuário autenticado no token. Cada usuário só vê suas próprias etiquetas.
+      // Admins têm acesso a todas através de seus tokens admin.
       const response = await emissoes.listar({
         page,
         limit: 20,
