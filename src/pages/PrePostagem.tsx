@@ -37,6 +37,9 @@ interface EmissaoData {
   valor_frete: number | null;
   data_emissao: string | null;
   data_postagem: string | null;
+  created_at: string;
+  updated_at: string;
+  synced_at: string;
   remetente: any;
   destinatario: any;
   dimensoes: any;
@@ -69,7 +72,7 @@ export default function PrePostagem() {
       let query = supabase
         .from('mysql_emissoes' as any)
         .select('*', { count: 'exact' })
-        .order('data_emissao', { ascending: false });
+        .order('created_at', { ascending: false }); // Ordenar por data de criação, mais recente primeiro
 
       // CONTROLE DE ACESSO: Admin vê todas as emissões, usuários comuns veem apenas as suas
       if (!isAdmin) {
@@ -295,11 +298,15 @@ export default function PrePostagem() {
                     )}
                   </div>
 
-                  {emissao.data_emissao && (
-                    <div className="text-xs text-muted-foreground">
-                      Criado em: {new Date(emissao.data_emissao).toLocaleString("pt-BR")}
-                    </div>
-                  )}
+                  <div className="text-xs text-muted-foreground">
+                    Criado em: {new Date(emissao.created_at).toLocaleString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })}
+                  </div>
                 </div>
 
                 <div className="flex gap-2 sm:flex-col">
