@@ -138,14 +138,8 @@ serve(async (req) => {
       try {
       console.log('Syncing Emissoes...');
       const emissoes = await mysqlClient.query(`
-        SELECT 
-          id,
-          clienteId,
-          codigoObjeto,
-          status,
-          createdAt
+        SELECT *
         FROM Emissao
-        ORDER BY createdAt DESC
         LIMIT 500
       `);
 
@@ -153,30 +147,30 @@ serve(async (req) => {
         try {
           totalProcessed++;
           
-          const { error } = await supabaseClient
+          const { error: emissaoError } = await supabaseClient
             .from('mysql_emissoes')
             .upsert({
               mysql_id: emissao.id,
-              cliente_id: emissao.clienteId,
-              codigo_objeto: emissao.codigoObjeto,
-              codigo_rastreio: emissao.codigoObjeto,
-              status: emissao.status,
+              cliente_id: emissao.clienteId || null,
+              codigo_objeto: emissao.codigoObjeto || null,
+              codigo_rastreio: emissao.codigoObjeto || null,
+              status: emissao.status || null,
               valor_frete: null,
               transportadora: null,
               servico: null,
               destinatario: null,
               remetente: null,
               dimensoes: null,
-              data_emissao: emissao.createdAt,
+              data_emissao: null,
               data_postagem: null,
               synced_at: new Date().toISOString()
             }, {
               onConflict: 'mysql_id'
             });
 
-          if (error) {
+          if (emissaoError) {
             totalFailed++;
-            errors.push({ table: 'Emissao', id: emissao.id, error: error.message });
+            errors.push({ table: 'Emissao', id: emissao.id, error: emissaoError.message });
           } else {
             totalSuccess++;
           }
@@ -198,12 +192,7 @@ serve(async (req) => {
       try {
       console.log('Syncing Usuarios...');
       const usuarios = await mysqlClient.query(`
-        SELECT 
-          id,
-          nome,
-          email,
-          clienteId,
-          ativo
+        SELECT *
         FROM Usuarios
         LIMIT 100
       `);
@@ -212,15 +201,15 @@ serve(async (req) => {
         try {
           totalProcessed++;
           
-          const { error } = await supabaseClient
+          const { error: usuarioError } = await supabaseClient
             .from('mysql_usuarios')
             .upsert({
               mysql_id: usuario.id,
-              nome: usuario.nome,
-              email: usuario.email,
+              nome: usuario.nome || null,
+              email: usuario.email || null,
               cpf: null,
               telefone: null,
-              cliente_id: usuario.clienteId,
+              cliente_id: usuario.clienteId || null,
               role: null,
               ativo: usuario.ativo === 1,
               synced_at: new Date().toISOString()
@@ -228,9 +217,9 @@ serve(async (req) => {
               onConflict: 'mysql_id'
             });
 
-          if (error) {
+          if (usuarioError) {
             totalFailed++;
-            errors.push({ table: 'Usuarios', id: usuario.id, error: error.message });
+            errors.push({ table: 'Usuarios', id: usuario.id, error: usuarioError.message });
           } else {
             totalSuccess++;
           }
