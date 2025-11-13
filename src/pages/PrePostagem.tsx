@@ -253,30 +253,33 @@ export default function PrePostagem() {
           {emissoesData.map((emissao) => (
             <Card key={emissao.id} className="border-none shadow-sm">
               <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex-1 space-y-2">
+                <div className="flex-1 space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-lg font-bold">
+                    <span className="font-mono text-base font-bold">
                       {emissao.codigo_objeto || emissao.id}
                     </span>
                     {getStatusBadge(emissao.status || '')}
                   </div>
                   
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {emissao.destinatario && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">Destinatário</p>
-                        <p className="font-medium">{emissao.destinatario.nome}</p>
-                        <p className="text-sm text-muted-foreground">{emissao.destinatario.cpfCnpj}</p>
-                      </div>
-                    )}
-                    
+                  {/* Campos Importantes: Remetente e Destinatário */}
+                  <div className="grid gap-3 sm:grid-cols-2 bg-accent/30 p-3 rounded-lg">
                     {emissao.remetente && (
                       <div>
-                        <p className="text-xs text-muted-foreground">Remetente</p>
-                        <p className="font-medium">{emissao.remetente.nome}</p>
+                        <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Remetente</p>
+                        <p className="font-semibold text-base">{emissao.remetente.nome}</p>
                         {emissao.remetente.empresa && (
                           <p className="text-sm text-muted-foreground">{emissao.remetente.empresa}</p>
                         )}
+                      </div>
+                    )}
+                    
+                    {emissao.destinatario && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Destinatário</p>
+                        <p className="font-semibold text-base">{emissao.destinatario.nome}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {emissao.destinatario.endereco?.localidade} - {emissao.destinatario.endereco?.uf}
+                        </p>
                       </div>
                     )}
                   </div>
