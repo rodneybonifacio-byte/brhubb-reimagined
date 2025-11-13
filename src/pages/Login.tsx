@@ -8,6 +8,18 @@ import { Eye, EyeOff, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { auth } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  email: z.string()
+    .trim()
+    .min(1, "Email é obrigatório")
+    .email("Email inválido")
+    .max(255, "Email deve ter no máximo 255 caracteres"),
+  password: z.string()
+    .min(6, "Senha deve ter no mínimo 6 caracteres")
+    .max(100, "Senha deve ter no máximo 100 caracteres")
+});
 
 export default function Login() {
   const navigate = useNavigate();
@@ -27,8 +39,11 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
-      toast.error("Por favor, preencha todos os campos");
+    // Validar inputs
+    const validation = loginSchema.safeParse({ email: email.trim(), password });
+    if (!validation.success) {
+      const errors = validation.error.errors.map(err => err.message).join(", ");
+      toast.error(errors);
       return;
     }
 

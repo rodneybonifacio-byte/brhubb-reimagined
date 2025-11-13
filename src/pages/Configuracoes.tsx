@@ -28,6 +28,22 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { UserPlus, CreditCard, Users } from "lucide-react";
+import { z } from "zod";
+
+const userSchema = z.object({
+  email: z.string()
+    .trim()
+    .min(1, "Email é obrigatório")
+    .email("Email inválido")
+    .max(255, "Email deve ter no máximo 255 caracteres"),
+  senha: z.string()
+    .min(6, "Senha deve ter no mínimo 6 caracteres")
+    .max(100, "Senha deve ter no máximo 100 caracteres"),
+  role: z.enum(["admin", "cliente"], { message: "Role inválida" }),
+  creditosInicial: z.number()
+    .min(0, "Créditos não podem ser negativos")
+    .max(1000000, "Créditos devem ser no máximo 1.000.000")
+});
 
 interface Usuario {
   id: string;
@@ -120,13 +136,17 @@ export default function Configuracoes() {
   const handleCriarUsuario = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !senha) {
-      toast.error('Preencha email e senha');
-      return;
-    }
+    // Validar dados
+    const validation = userSchema.safeParse({
+      email: email.trim(),
+      senha,
+      role,
+      creditosInicial: parseFloat(creditosInicial)
+    });
 
-    if (senha.length < 6) {
-      toast.error('A senha deve ter no mínimo 6 caracteres');
+    if (!validation.success) {
+      const errors = validation.error.errors.map(err => err.message).join(", ");
+      toast.error(errors);
       return;
     }
 
