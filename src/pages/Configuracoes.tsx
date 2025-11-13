@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { UserPlus, CreditCard } from "lucide-react";
+import { UserPlus, CreditCard, Users } from "lucide-react";
 
 interface Usuario {
   id: string;
@@ -40,6 +40,7 @@ export default function Configuracoes() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(false);
   const [criando, setCriando] = useState(false);
+  const [gerandoTestes, setGerandoTestes] = useState(false);
   const [defaultCredits, setDefaultCredits] = useState(100);
   
   // Form states
@@ -182,14 +183,121 @@ export default function Configuracoes() {
     }
   };
 
+  const gerarUsuariosTeste = async () => {
+    try {
+      setGerandoTestes(true);
+      
+      const usuariosTeste = [
+        { email: 'admin.teste@brhub.com', senha: 'admin123', role: 'admin' as const, creditos: 0 },
+        { email: 'cliente1@brhub.com', senha: 'cliente123', role: 'cliente' as const, creditos: 500 },
+        { email: 'cliente2@brhub.com', senha: 'cliente123', role: 'cliente' as const, creditos: 1000 },
+        { email: 'cliente3@brhub.com', senha: 'cliente123', role: 'cliente' as const, creditos: 250 },
+      ];
+
+      let sucesso = 0;
+      let falhas = 0;
+
+      for (const usuario of usuariosTeste) {
+        try {
+          const { data, error } = await supabase.functions.invoke('manage-users', {
+            body: {
+              email: usuario.email,
+              password: usuario.senha,
+              role: usuario.role,
+              initialCredits: usuario.creditos,
+            },
+          });
+
+          if (error) {
+            console.error(`Erro ao criar ${usuario.email}:`, error);
+            falhas++;
+          } else if (data?.success) {
+            sucesso++;
+          } else {
+            falhas++;
+          }
+        } catch (err) {
+          console.error(`Exceção ao criar ${usuario.email}:`, err);
+          falhas++;
+        }
+      }
+
+      if (sucesso > 0) {
+        toast.success(`${sucesso} usuários de teste criados com sucesso!`);
+      }
+      if (falhas > 0) {
+        toast.warning(`${falhas} usuários não puderam ser criados (podem já existir)`);
+      }
+
+      // Recarregar lista
+      setTimeout(carregarUsuarios, 1000);
+    } catch (error: any) {
+      console.error('Erro ao gerar usuários de teste:', error);
+      toast.error('Erro ao gerar usuários de teste');
+    } finally {
+      setGerandoTestes(false);
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6 max-w-6xl">
-      <div>
-        <h1 className="text-3xl font-bold">Gestão de Usuários</h1>
-        <p className="text-muted-foreground mt-2">
-          Crie novos usuários e gerencie seus créditos
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Gestão de Usuários</h1>
+          <p className="text-muted-foreground mt-2">
+            Crie novos usuários e gerencie seus créditos
+          </p>
+        </div>
+        <Button 
+          onClick={gerarUsuariosTeste}
+          disabled={gerandoTestes}
+          variant="outline"
+          className="gap-2"
+        >
+          <Users className="h-4 w-4" />
+          {gerandoTestes ? 'Gerando...' : 'Gerar Usuários de Teste'}
+        </Button>
       </div>
+
+      {/* Card de Informação sobre Usuários de Teste */}
+      <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+        <CardHeader>
+          <CardTitle className="text-blue-900 dark:text-blue-100 text-base">
+            Usuários de Teste Disponíveis
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+            Clique no botão "Gerar Usuários de Teste" para criar automaticamente:
+          </p>
+          <div className="space-y-2 text-sm">
+            <div className="bg-white dark:bg-blue-900 p-3 rounded-lg">
+              <p className="font-semibold text-blue-900 dark:text-blue-100">👤 Admin de Teste</p>
+              <p className="text-blue-700 dark:text-blue-300 font-mono text-xs mt-1">
+                Email: admin.teste@brhub.com | Senha: admin123
+              </p>
+            </div>
+            <div className="bg-white dark:bg-blue-900 p-3 rounded-lg">
+              <p className="font-semibold text-blue-900 dark:text-blue-100">💰 Cliente 1 (R$ 500)</p>
+              <p className="text-blue-700 dark:text-blue-300 font-mono text-xs mt-1">
+                Email: cliente1@brhub.com | Senha: cliente123
+              </p>
+            </div>
+            <div className="bg-white dark:bg-blue-900 p-3 rounded-lg">
+              <p className="font-semibold text-blue-900 dark:text-blue-100">💰 Cliente 2 (R$ 1.000)</p>
+              <p className="text-blue-700 dark:text-blue-300 font-mono text-xs mt-1">
+                Email: cliente2@brhub.com | Senha: cliente123
+              </p>
+            </div>
+            <div className="bg-white dark:bg-blue-900 p-3 rounded-lg">
+              <p className="font-semibold text-blue-900 dark:text-blue-100">💰 Cliente 3 (R$ 250)</p>
+              <p className="text-blue-700 dark:text-blue-300 font-mono text-xs mt-1">
+                Email: cliente3@brhub.com | Senha: cliente123
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Formulário de Criação */}
       <Card>
