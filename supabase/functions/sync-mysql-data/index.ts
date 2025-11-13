@@ -159,14 +159,90 @@ serve(async (req) => {
         } else if (table === 'Emissao') {
           console.log('Syncing Emissoes...');
           const emissoes = await mysqlClient.query(`
-            SELECT *
+            SELECT 
+              id,
+              clienteId,
+              codigoObjeto,
+              codigoRastreio,
+              status,
+              valorFrete,
+              transportadora,
+              servico,
+              dataEmissao,
+              dataPostagem,
+              destinatarioNome,
+              destinatarioCpfCnpj,
+              destinatarioTelefone,
+              destinatarioCep,
+              destinatarioLogradouro,
+              destinatarioNumero,
+              destinatarioComplemento,
+              destinatarioBairro,
+              destinatarioLocalidade,
+              destinatarioUf,
+              remetenteNome,
+              remetenteCpfCnpj,
+              remetenteTelefone,
+              remetenteCep,
+              remetenteLogradouro,
+              remetenteNumero,
+              remetenteComplemento,
+              remetenteBairro,
+              remetenteLocalidade,
+              remetenteUf,
+              altura,
+              largura,
+              comprimento,
+              peso,
+              diametro
             FROM Emissao
             LIMIT 500
           `);
 
+          console.log(`Found ${emissoes.length} rows in Emissao`);
+
           for (const emissao of emissoes) {
             try {
               totalProcessed++;
+              
+              // Construir objetos JSON para remetente e destinatario
+              const destinatario = {
+                nome: emissao.destinatarioNome || null,
+                cpfCnpj: emissao.destinatarioCpfCnpj || null,
+                telefone: emissao.destinatarioTelefone || null,
+                endereco: {
+                  cep: emissao.destinatarioCep || null,
+                  logradouro: emissao.destinatarioLogradouro || null,
+                  numero: emissao.destinatarioNumero || null,
+                  complemento: emissao.destinatarioComplemento || null,
+                  bairro: emissao.destinatarioBairro || null,
+                  localidade: emissao.destinatarioLocalidade || null,
+                  uf: emissao.destinatarioUf || null,
+                }
+              };
+
+              const remetente = {
+                nome: emissao.remetenteNome || null,
+                cpfCnpj: emissao.remetenteCpfCnpj || null,
+                telefone: emissao.remetenteTelefone || null,
+                endereco: {
+                  cep: emissao.remetenteCep || null,
+                  logradouro: emissao.remetenteLogradouro || null,
+                  numero: emissao.remetenteNumero || null,
+                  complemento: emissao.remetenteComplemento || null,
+                  bairro: emissao.remetenteBairro || null,
+                  localidade: emissao.remetenteLocalidade || null,
+                  uf: emissao.remetenteUf || null,
+                }
+              };
+
+              const dimensoes = {
+                altura: emissao.altura || null,
+                largura: emissao.largura || null,
+                comprimento: emissao.comprimento || null,
+                peso: emissao.peso || null,
+                diametro: emissao.diametro || null,
+              };
               
               // Mapear todos os campos disponíveis do MySQL
               const emissaoData: any = {
@@ -175,18 +251,16 @@ serve(async (req) => {
                 codigo_objeto: emissao.codigoObjeto || null,
                 codigo_rastreio: emissao.codigoRastreio || emissao.codigoObjeto || null,
                 status: emissao.status || null,
+                valor_frete: emissao.valorFrete || null,
+                transportadora: emissao.transportadora || null,
+                servico: emissao.servico || null,
+                destinatario: destinatario,
+                remetente: remetente,
+                dimensoes: dimensoes,
+                data_emissao: emissao.dataEmissao || null,
+                data_postagem: emissao.dataPostagem || null,
                 synced_at: new Date().toISOString()
               };
-
-              // Adicionar campos opcionais se existirem
-              if (emissao.valorFrete !== undefined) emissaoData.valor_frete = emissao.valorFrete;
-              if (emissao.transportadora !== undefined) emissaoData.transportadora = emissao.transportadora;
-              if (emissao.servico !== undefined) emissaoData.servico = emissao.servico;
-              if (emissao.destinatario !== undefined) emissaoData.destinatario = emissao.destinatario;
-              if (emissao.remetente !== undefined) emissaoData.remetente = emissao.remetente;
-              if (emissao.dimensoes !== undefined) emissaoData.dimensoes = emissao.dimensoes;
-              if (emissao.dataEmissao !== undefined) emissaoData.data_emissao = emissao.dataEmissao;
-              if (emissao.dataPostagem !== undefined) emissaoData.data_postagem = emissao.dataPostagem;
 
               const { error: emissaoError } = await supabaseClient
                 .from('mysql_emissoes')
