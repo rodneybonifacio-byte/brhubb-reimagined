@@ -24,11 +24,10 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Settings, Percent, Truck, Save } from "lucide-react";
+import { Settings, Percent, Truck, Save, Plus } from "lucide-react";
 
 interface ClientSetting {
   id: string;
@@ -49,14 +48,48 @@ export default function AdminGestaoClientes() {
   const [loading, setLoading] = useState(false);
   const [editingClient, setEditingClient] = useState<ClientSetting | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [usuariosDisponiveis, setUsuariosDisponiveis] = useState<any[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
 
   // Form states
-  const [selectedCarriers, setSelectedCarriers] = useState<string[]>([]);
+  const [selectedCarriers, setSelectedCarriers] = useState<string[]>(["CORREIOS", "RODONAVES"]);
   const [markupValue, setMarkupValue] = useState("15.00");
 
   useEffect(() => {
     carregarClientes();
+    carregarUsuariosDisponiveis();
   }, []);
+
+  const carregarUsuariosDisponiveis = async () => {
+    try {
+      // Buscar todos os usuários com role cliente
+      const { data: usuarios, error } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .eq('role', 'cliente');
+
+      if (error) throw error;
+
+      // Buscar nomes dos clientes
+      const { data: credits } = await supabase
+        .from('client_credits')
+        .select('client_id, client_name');
+
+      // Combinar dados
+      const usuariosComNome = (usuarios || []).map(u => {
+        const creditInfo = credits?.find(c => c.client_id === u.user_id);
+        return {
+          id: u.user_id,
+          name: creditInfo?.client_name || u.user_id.substring(0, 8),
+        };
+      });
+
+      setUsuariosDisponiveis(usuariosComNome);
+    } catch (error) {
+      console.error('Erro ao carregar usuários:', error);
+    }
+  };
 
   const carregarClientes = async () => {
     try {
@@ -135,13 +168,67 @@ export default function AdminGestaoClientes() {
     );
   };
 
+  const handleAbrirAdicionarCliente = () => {
+    setSelectedUserId("");
+    setSelectedCarriers(["CORREIOS", "RODONAVES"]);
+    setMarkupValue("15.00");
+    setAddDialogOpen(true);
+  };
+
+  const handleAdicionarCliente = async () => {
+    if (!selectedUserId) {
+      toast.error('Selecione um cliente');
+      return;
+    }
+
+    if (selectedCarriers.length === 0) {
+      toast.error('Selecione pelo menos uma transportadora');
+      return;
+    }
+
+    const markup = parseFloat(markupValue);
+    if (isNaN(markup) || markup < 0) {
+      toast.error('Porcentagem de markup inválida');
+      return;
+    }
+
+    try {
+      const usuario = usuariosDisponiveis.find(u => u.id === selectedUserId);
+      
+      const { error } = await supabase
+        .from('client_settings')
+        .insert({
+          client_id: selectedUserId,
+          client_name: usuario?.name || selectedUserId,
+          enabled_carriers: selectedCarriers,
+          markup_percentage: markup,
+        });
+
+      if (error) throw error;
+
+      toast.success('Cliente adicionado com sucesso!');
+      setAddDialogOpen(false);
+      carregarClientes();
+      carregarUsuariosDisponiveis();
+    } catch (error: any) {
+      console.error('Erro ao adicionar cliente:', error);
+      toast.error('Erro ao adicionar cliente');
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6 max-w-6xl">
-      <div>
-        <h1 className="text-3xl font-bold">Gestão de Clientes</h1>
-        <p className="text-muted-foreground mt-2">
-          Configure transportadoras disponíveis e porcentagem de markup por cliente
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Gestão de Clientes</h1>
+          <p className="text-muted-foreground mt-2">
+            Configure transportadoras disponíveis e porcentagem de markup por cliente
+          </p>
+        </div>
+        <Button onClick={handleAbrirAdicionarCliente}>
+          <Plus className="h-4 w-4 mr-2" />
+          Adicionar Cliente
+        </Button>
       </div>
 
       <Card>
@@ -303,6 +390,110 @@ export default function AdminGestaoClientes() {
             <Button onClick={handleSalvarConfiguracoes}>
               <Save className="h-4 w-4 mr-2" />
               Salvar Configurações
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Adicionar Cliente */}
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adicionar Novo Cliente</DialogTitle>
+            <DialogDescription>
+              Selecione um cliente e configure suas permissões
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Seleção de Cliente */}
+            <div className="space-y-2">
+              <Label htmlFor="cliente" className="text-base font-semibold">
+                Selecionar Cliente
+              </Label>
+              <select
+                id="cliente"
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value)}
+                className="w-full px-3 py-2 border border-input bg-background rounded-md"
+              >
+                <option value="">Selecione um cliente...</option>
+                {usuariosDisponiveis
+                  .filter(u => !clientes.some(c => c.client_id === u.id))
+                  .map((usuario) => (
+                    <option key={usuario.id} value={usuario.id}>
+                      {usuario.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            {/* Transportadoras */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">
+                Transportadoras Habilitadas
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Selecione quais transportadoras este cliente pode usar
+              </p>
+              
+              <div className="space-y-2">
+                {AVAILABLE_CARRIERS.map((carrier) => (
+                  <div key={carrier.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`add-${carrier.id}`}
+                      checked={selectedCarriers.includes(carrier.id)}
+                      onCheckedChange={() => handleToggleCarrier(carrier.id)}
+                    />
+                    <label
+                      htmlFor={`add-${carrier.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {carrier.name}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Markup */}
+            <div className="space-y-2">
+              <Label htmlFor="add-markup" className="text-base font-semibold">
+                Porcentagem de Markup (%)
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Porcentagem de lucro aplicada sobre o valor do frete
+              </p>
+              <Input
+                id="add-markup"
+                type="number"
+                step="0.01"
+                min="0"
+                value={markupValue}
+                onChange={(e) => setMarkupValue(e.target.value)}
+                placeholder="15.00"
+              />
+              
+              {/* Preview do cálculo */}
+              <div className="bg-muted p-3 rounded-lg mt-3">
+                <p className="text-xs font-semibold mb-1">Exemplo de Cálculo:</p>
+                <p className="text-xs text-muted-foreground">
+                  Frete: R$ 100,00 + {markupValue}% = R$ {(100 + (100 * parseFloat(markupValue || "0") / 100)).toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setAddDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleAdicionarCliente}>
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Cliente
             </Button>
           </div>
         </DialogContent>
