@@ -97,16 +97,14 @@ export default function SimuladorFrete() {
         
         setSupabaseUserId(user.id);
 
-        // Buscar endereços do Supabase
-        const { data: origensData, error } = await supabase
-          .from('client_origins')
+        // Buscar endereços do banco MySQL sincronizado
+        const { data: clientesData, error } = await supabase
+          .from('mysql_clientes' as any)
           .select('*')
-          .eq('user_id', user.id)
-          .order('is_principal', { ascending: false })
-          .order('created_at', { ascending: false });
+          .eq('ativo', true);
 
         if (error) {
-          console.error("Erro ao buscar origens:", error);
+          console.error("Erro ao buscar clientes do MySQL:", error);
           toast.error("Erro ao carregar endereços de origem");
           setOrigens([]);
           return;
@@ -114,25 +112,28 @@ export default function SimuladorFrete() {
 
         const origensCarregadas: OrigemItem[] = [];
 
-        // Converter dados do Supabase para formato OrigemItem
-        if (origensData && origensData.length > 0) {
-          origensData.forEach((origem: any) => {
-            const enderecoFormatado = [
-              origem.logradouro, 
-              origem.numero, 
-              origem.complemento, 
-              origem.bairro, 
-              `${origem.localidade}/${origem.uf}`
-            ].filter(Boolean).join(', ');
-            
-            origensCarregadas.push({
-              id: origem.id,
-              nome: origem.name,
-              endereco: enderecoFormatado,
-              cep: origem.cep,
-              cpfCnpj: origem.cpf_cnpj,
-              isPrincipal: origem.is_principal
-            });
+        // Converter dados do MySQL para formato OrigemItem
+        if (clientesData && clientesData.length > 0) {
+          clientesData.forEach((cliente: any) => {
+            if (cliente.endereco) {
+              const endereco = cliente.endereco;
+              const enderecoFormatado = [
+                endereco.logradouro, 
+                endereco.numero, 
+                endereco.complemento, 
+                endereco.bairro, 
+                `${endereco.localidade}/${endereco.uf}`
+              ].filter(Boolean).join(', ');
+              
+              origensCarregadas.push({
+                id: cliente.id,
+                nome: cliente.nome || cliente.email,
+                endereco: enderecoFormatado,
+                cep: endereco.cep,
+                cpfCnpj: cliente.cpf_cnpj,
+                isPrincipal: false
+              });
+            }
           });
         }
         
