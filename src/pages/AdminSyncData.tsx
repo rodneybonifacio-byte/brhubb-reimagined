@@ -24,7 +24,7 @@ export default function AdminSyncData() {
 
   const loadSyncLogs = async () => {
     const { data, error } = await supabase
-      .from('sync_logs')
+      .from('sync_logs' as any)
       .select('*')
       .order('started_at', { ascending: false })
       .limit(10);
@@ -40,7 +40,7 @@ export default function AdminSyncData() {
   const loadSyncedData = async () => {
     // Carregar clientes
     const { data: clientes } = await supabase
-      .from('mysql_clientes')
+      .from('mysql_clientes' as any)
       .select('*')
       .order('synced_at', { ascending: false })
       .limit(50);
@@ -48,7 +48,7 @@ export default function AdminSyncData() {
 
     // Carregar emissões
     const { data: emissoes } = await supabase
-      .from('mysql_emissoes')
+      .from('mysql_emissoes' as any)
       .select('*')
       .order('synced_at', { ascending: false })
       .limit(50);
@@ -56,7 +56,7 @@ export default function AdminSyncData() {
 
     // Carregar usuários
     const { data: usuarios } = await supabase
-      .from('mysql_usuarios')
+      .from('mysql_usuarios' as any)
       .select('*')
       .order('synced_at', { ascending: false })
       .limit(50);
