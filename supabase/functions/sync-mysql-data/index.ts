@@ -44,8 +44,8 @@ serve(async (req) => {
       throw new Error('Sem permissão de administrador');
     }
 
-    // Obter parâmetro de tabela específica (se fornecido)
-    const { tableName } = await req.json().catch(() => ({ tableName: null }));
+    // Obter parâmetros
+    const { tableName, action } = await req.json().catch(() => ({ tableName: null, action: 'sync' }));
 
     // Criar log de sincronização
     const { data: syncLog, error: logError } = await supabaseClient
@@ -73,6 +73,26 @@ serve(async (req) => {
     });
 
     console.log('Connected to MySQL database:', Deno.env.get('MYSQL_DATABASE') ?? 'dbhomol');
+
+    // Se a ação for listar tabelas
+    if (action === 'list-tables') {
+      const tables = await mysqlClient.query('SHOW TABLES');
+      const tableNames = tables.map((row: any) => Object.values(row)[0]);
+      
+      await mysqlClient.close();
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          tables: tableNames,
+          total: tableNames.length
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    }
 
     let totalProcessed = 0;
     let totalSuccess = 0;
