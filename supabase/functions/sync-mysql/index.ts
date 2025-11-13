@@ -46,14 +46,12 @@ serve(async (req) => {
       throw new Error('Sem permissão de administrador');
     }
 
-    // Conectar ao MySQL
-    // ATENÇÃO: Credenciais temporárias APENAS PARA TESTE
-    // TODO: Mover para secrets assim que possível
+    // Conectar ao MySQL usando secrets configurados
     const mysqlClient = await new Client().connect({
-      hostname: '69.62.86.39',
-      username: 'root',
-      password: '102030@2025',
-      port: 3306,
+      hostname: Deno.env.get('MYSQL_HOST') ?? '',
+      username: Deno.env.get('MYSQL_USER') ?? '',
+      password: Deno.env.get('MYSQL_PASSWORD') ?? '',
+      port: parseInt(Deno.env.get('MYSQL_PORT') ?? '3306'),
     });
 
     console.log('Connected to MySQL');
