@@ -48,14 +48,14 @@ Deno.serve(async (req) => {
 
     const { userId, newEmail } = await req.json() as UpdateEmailRequest
 
-    console.log('Atualizando email:', { userId, newEmail })
+    console.log('Atualizando email do usuário:', { userId, newEmail })
 
     // Atualizar email usando service_role
     const { data: updatedUser, error: updateError } = await supabaseClient.auth.admin.updateUserById(
       userId,
       { 
         email: newEmail,
-        email_confirm: true
+        email_confirm: true 
       }
     )
 
@@ -64,14 +64,28 @@ Deno.serve(async (req) => {
       throw updateError
     }
 
-    console.log('Email atualizado com sucesso:', updatedUser.user?.email)
+    if (!updatedUser.user) {
+      throw new Error('Falha ao atualizar email')
+    }
+
+    console.log('Email atualizado com sucesso:', updatedUser.user.email)
+
+    // Atualizar client_name na tabela de créditos
+    const { error: creditsUpdateError } = await supabaseClient
+      .from('client_credits')
+      .update({ client_name: newEmail })
+      .eq('client_id', userId)
+
+    if (creditsUpdateError) {
+      console.warn('Aviso ao atualizar client_name:', creditsUpdateError)
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         user: {
-          id: updatedUser.user?.id,
-          email: updatedUser.user?.email,
+          id: updatedUser.user.id,
+          email: updatedUser.user.email,
         },
       }),
       {

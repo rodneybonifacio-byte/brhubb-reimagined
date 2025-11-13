@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { UserPlus, CreditCard, Users } from "lucide-react";
+import { UserPlus, CreditCard, Users, Mail } from "lucide-react";
 
 interface Usuario {
   id: string;
@@ -37,10 +38,12 @@ interface Usuario {
 }
 
 export default function Configuracoes() {
+  const navigate = useNavigate();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(false);
   const [criando, setCriando] = useState(false);
   const [gerandoTestes, setGerandoTestes] = useState(false);
+  const [atualizandoEmail, setAtualizandoEmail] = useState(false);
   const [defaultCredits, setDefaultCredits] = useState(100);
   
   // Form states
@@ -239,6 +242,35 @@ export default function Configuracoes() {
     }
   };
 
+  const atualizarEmailParaFinanceiro = async () => {
+    try {
+      setAtualizandoEmail(true);
+      
+      const { data, error } = await supabase.functions.invoke('update-user-email', {
+        body: {
+          userId: 'b3be82e3-aacc-4c66-b8d7-7c91066ed0b7',
+          newEmail: 'financeiro@brhubb.com.br',
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error('Falha ao atualizar email');
+
+      toast.success('Email atualizado para financeiro@brhubb.com.br! Por favor, faça login novamente.');
+      
+      // Aguardar um momento e fazer logout
+      setTimeout(async () => {
+        await supabase.auth.signOut();
+        navigate('/login');
+      }, 2000);
+    } catch (error: any) {
+      console.error('Erro ao atualizar email:', error);
+      toast.error(error.message || 'Erro ao atualizar email');
+    } finally {
+      setAtualizandoEmail(false);
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6 max-w-6xl">
       <div className="flex items-center justify-between">
@@ -258,6 +290,42 @@ export default function Configuracoes() {
           {gerandoTestes ? 'Gerando...' : 'Gerar Usuários de Teste'}
         </Button>
       </div>
+
+      {/* Card Especial: Atualizar Email para Financeiro */}
+      <Card className="bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-orange-900 dark:text-orange-100">
+            <Mail className="h-5 w-5" />
+            Atualizar Email da Conta Atual
+          </CardTitle>
+          <CardDescription className="text-orange-700 dark:text-orange-300">
+            Clique no botão abaixo para alterar o email desta conta para financeiro@brhubb.com.br
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
+                Email Atual: <span className="font-mono">b3be82e3-aacc-4c66-b8d7-7c91066ed0b7</span>
+              </p>
+              <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
+                Novo Email: <span className="font-mono">financeiro@brhubb.com.br</span>
+              </p>
+              <p className="text-xs text-orange-700 dark:text-orange-300 mt-2">
+                Após a atualização, você precisará fazer login novamente com o novo email.
+              </p>
+            </div>
+            <Button
+              onClick={atualizarEmailParaFinanceiro}
+              disabled={atualizandoEmail}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              {atualizandoEmail ? 'Atualizando...' : 'Atualizar Email'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Card de Informação sobre Usuários de Teste */}
       <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
