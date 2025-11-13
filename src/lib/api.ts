@@ -1,5 +1,39 @@
 export const API_BASE_URL = "https://envios.brhubb.com.br/api";
 
+// Interceptor para tratar erros 401 (token expirado)
+const handleUnauthorized = () => {
+  // Limpar tokens
+  localStorage.removeItem("auth_token");
+  localStorage.removeItem("user_data");
+  
+  // Importar toast dinamicamente para evitar problemas de dependência circular
+  import("sonner").then(({ toast }) => {
+    toast.error("Sua sessão expirou. Faça login novamente.", {
+      duration: 5000,
+    });
+  });
+  
+  // Redirecionar para login após um pequeno delay
+  setTimeout(() => {
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
+  }, 500);
+};
+
+// Função helper para fazer requisições com tratamento de erro 401
+const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+  const response = await fetch(url, options);
+  
+  // Se receber 401, token expirado - fazer logout
+  if (response.status === 401) {
+    handleUnauthorized();
+    throw new Error("Sessão expirada. Faça login novamente.");
+  }
+  
+  return response;
+};
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -190,7 +224,7 @@ export const clientes = {
       throw new Error("Dados do usuário não encontrados. Faça login novamente.");
     }
     
-    const response = await fetch(`${API_BASE_URL}/clientes/endereco/${userData.clienteId}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/clientes/endereco/${userData.clienteId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -211,7 +245,7 @@ export const remetentes = {
   listar: async (): Promise<RemetentesResponse> => {
     const token = auth.getToken();
     
-    const response = await fetch(`${API_BASE_URL}/remetentes`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/remetentes`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -232,7 +266,7 @@ export const frete = {
   cotacao: async (dados: CotacaoRequest): Promise<CotacaoResponse> => {
     const token = auth.getToken();
     
-    const response = await fetch(`${API_BASE_URL}/frete/cotacao`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/frete/cotacao`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -369,7 +403,7 @@ export const emissoes = {
   criar: async (dados: EmissaoRequest): Promise<EmissaoResponse> => {
     const token = auth.getToken();
     
-    const response = await fetch(`${API_BASE_URL}/emissoes`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/emissoes`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -389,7 +423,7 @@ export const emissoes = {
   obterPorId: async (id: string): Promise<EmissaoItem> => {
     const token = auth.getToken();
     
-    const response = await fetch(`${API_BASE_URL}/emissoes/${id}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/emissoes/${id}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -422,7 +456,7 @@ export const emissoes = {
     
     const url = `${API_BASE_URL}/emissoes${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
     
-    const response = await fetch(url, {
+    const response = await fetchWithAuth(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
