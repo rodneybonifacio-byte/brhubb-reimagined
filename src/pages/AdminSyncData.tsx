@@ -20,6 +20,28 @@ export default function AdminSyncData() {
   useEffect(() => {
     loadSyncLogs();
     loadSyncedData();
+
+    // Configurar realtime para sync_logs
+    const channel = supabase
+      .channel('sync-logs-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sync_logs'
+        },
+        (payload) => {
+          console.log('Realtime update:', payload);
+          // Recarregar logs quando houver mudanças
+          loadSyncLogs();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadSyncLogs = async () => {
