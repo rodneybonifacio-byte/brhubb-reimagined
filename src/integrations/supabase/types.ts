@@ -41,6 +41,60 @@ export type Database = {
         }
         Relationships: []
       }
+      client_origins: {
+        Row: {
+          bairro: string
+          cep: string
+          client_id: string
+          complemento: string | null
+          cpf_cnpj: string
+          created_at: string | null
+          id: string
+          is_principal: boolean | null
+          localidade: string
+          logradouro: string
+          name: string
+          numero: string
+          uf: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bairro: string
+          cep: string
+          client_id: string
+          complemento?: string | null
+          cpf_cnpj: string
+          created_at?: string | null
+          id?: string
+          is_principal?: boolean | null
+          localidade: string
+          logradouro: string
+          name: string
+          numero: string
+          uf: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bairro?: string
+          cep?: string
+          client_id?: string
+          complemento?: string | null
+          cpf_cnpj?: string
+          created_at?: string | null
+          id?: string
+          is_principal?: boolean | null
+          localidade?: string
+          logradouro?: string
+          name?: string
+          numero?: string
+          uf?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       client_settings: {
         Row: {
           client_id: string

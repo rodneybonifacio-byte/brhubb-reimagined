@@ -2,12 +2,14 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Calculator, User, MapPin, Search, Loader2 } from "lucide-react";
+import { Calculator, User, MapPin, Search, Loader2, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { frete, CotacaoItem, clientes, remetentes, EnderecoCliente, RemetenteItem } from "@/lib/api";
+import { frete, CotacaoItem } from "@/lib/api";
 import { toast } from "sonner";
 import { CotacaoResultCard } from "@/components/CotacaoResultCard";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import brhubLogo from "@/assets/brhub-logo.png";
 import correiosLogo from "@/assets/correios-logo.png";
 import rodonaves from "@/assets/rodonaves-logo.png";
@@ -26,6 +28,7 @@ interface EnderecoDestino {
   uf: string;
 }
 export default function SimuladorFrete() {
+  const { user } = useAuth();
   const [cep, setCep] = useState("");
   const [altura, setAltura] = useState("");
   const [largura, setLargura] = useState("");
@@ -35,73 +38,73 @@ export default function SimuladorFrete() {
   const [origens, setOrigens] = useState<OrigemItem[]>([]);
   const [origemSelecionada, setOrigemSelecionada] = useState<OrigemItem | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [addOrigemModalOpen, setAddOrigemModalOpen] = useState(false);
   const [buscaOrigem, setBuscaOrigem] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingOrigens, setLoadingOrigens] = useState(true);
   const [loadingCep, setLoadingCep] = useState(false);
   const [cotacoes, setCotacoes] = useState<CotacaoItem[]>([]);
   const [enderecoDestino, setEnderecoDestino] = useState<EnderecoDestino | null>(null);
+  
+  // Estados para novo endereço
+  const [novoEndereco, setNovoEndereco] = useState({
+    name: "",
+    cpf_cnpj: "",
+    cep: "",
+    logradouro: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
+    localidade: "",
+    uf: "",
+    is_principal: false
+  });
 
   // Carregar origens ao montar o componente
   useEffect(() => {
     const carregarOrigens = async () => {
+      if (!user) return;
+      
       try {
         setLoadingOrigens(true);
 
-        // Buscar remetentes primeiro (mais confiável)
-        const remetentesData = await remetentes.listar().catch(error => {
-          console.error("Erro ao buscar remetentes:", error);
-          
-          // Verificar se é erro 403 (permissão negada)
-          if (error?.message?.includes("403") || error?.message?.includes("Acesso negado")) {
-            toast.error("Sem permissão para acessar remetentes. Verifique suas configurações de acesso.");
-          }
-          
-          return {
-            data: []
-          };
-        });
-        const origensCarregadas: OrigemItem[] = [];
+        // Buscar endereços do Supabase
+        const { data: origensData, error } = await supabase
+          .from('client_origins')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('is_principal', { ascending: false })
+          .order('created_at', { ascending: false });
 
-        // Adicionar remetentes
-        if (remetentesData.data && remetentesData.data.length > 0) {
-          remetentesData.data.forEach((remetente: RemetenteItem) => {
-            const enderecoFormatado = [remetente.endereco.logradouro, remetente.endereco.numero, remetente.endereco.complemento, remetente.endereco.bairro, `${remetente.endereco.localidade}/${remetente.endereco.uf}`].filter(Boolean).join(', ');
-            origensCarregadas.push({
-              id: remetente.id,
-              nome: remetente.nome,
-              endereco: enderecoFormatado,
-              cep: remetente.endereco.cep || "",
-              cpfCnpj: remetente.cpfCnpj || "",
-              isPrincipal: false
-            });
-          });
+        if (error) {
+          console.error("Erro ao buscar origens:", error);
+          toast.error("Erro ao carregar endereços de origem");
+          setOrigens([]);
+          return;
         }
 
-        // Tentar adicionar endereço principal do cliente
-        try {
-          const response = await clientes.getEnderecoPrincipal();
-          const cliente = response.data;
-          if (cliente && cliente.endereco && cliente.endereco.logradouro && cliente.endereco.localidade) {
-            const enderecoFormatado = [cliente.endereco.logradouro, cliente.endereco.numero, cliente.endereco.complemento, cliente.endereco.bairro, `${cliente.endereco.localidade}/${cliente.endereco.uf}`].filter(Boolean).join(', ');
+        const origensCarregadas: OrigemItem[] = [];
 
-            // Adicionar no início da lista se for válido
-            origensCarregadas.unshift({
-              id: "principal",
-              nome: cliente.nome || "Endereço Principal",
+        // Converter dados do Supabase para formato OrigemItem
+        if (origensData && origensData.length > 0) {
+          origensData.forEach((origem: any) => {
+            const enderecoFormatado = [
+              origem.logradouro, 
+              origem.numero, 
+              origem.complemento, 
+              origem.bairro, 
+              `${origem.localidade}/${origem.uf}`
+            ].filter(Boolean).join(', ');
+            
+            origensCarregadas.push({
+              id: origem.id,
+              nome: origem.name,
               endereco: enderecoFormatado,
-              cep: cliente.endereco.cep || "",
-              cpfCnpj: cliente.cpfCnpj || "",
-              isPrincipal: true
+              cep: origem.cep,
+              cpfCnpj: origem.cpf_cnpj,
+              isPrincipal: origem.is_principal
             });
-          }
-        } catch (error: any) {
-          console.error("Erro ao buscar endereço principal:", error);
-          
-          // Verificar se é erro 403 (permissão negada)
-          if (error?.message?.includes("403") || error?.message?.includes("Acesso negado")) {
-            toast.error("Sem permissão para acessar endereço principal. Verifique suas configurações de acesso.");
-          }
+          });
         }
         
         setOrigens(origensCarregadas);
@@ -111,17 +114,17 @@ export default function SimuladorFrete() {
           setOrigemSelecionada(origensCarregadas[0]);
           toast.success("Origem carregada com sucesso!");
         } else {
-          toast.error("Nenhuma origem disponível. Seu usuário não possui permissão para acessar remetentes ou endereços. Entre em contato com o administrador do sistema.");
+          toast.info("Nenhum endereço de origem cadastrado. Adicione um para começar!");
         }
       } catch (error) {
         console.error("Erro ao carregar origens:", error);
-        toast.error("Erro ao carregar origens. Verifique sua conexão e permissões.");
+        toast.error("Erro ao carregar origens disponíveis");
       } finally {
         setLoadingOrigens(false);
       }
     };
     carregarOrigens();
-  }, []);
+  }, [user]);
 
   // Função para formatar CEP
   const formatarCep = (valor: string) => {
@@ -181,6 +184,124 @@ export default function SimuladorFrete() {
     }
   };
   const origensFiltradas = origens.filter(origem => origem.nome.toLowerCase().includes(buscaOrigem.toLowerCase()) || origem.endereco.toLowerCase().includes(buscaOrigem.toLowerCase()));
+  
+  // Função para buscar CEP do novo endereço
+  const buscarCepNovoEndereco = async (cepValue: string) => {
+    const cepLimpo = cepValue.replace(/\D/g, '');
+    if (cepLimpo.length !== 8) return;
+    
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+      const data = await response.json();
+      if (data.erro) {
+        toast.error("CEP não encontrado");
+        return;
+      }
+      setNovoEndereco(prev => ({
+        ...prev,
+        logradouro: data.logradouro || "",
+        bairro: data.bairro || "",
+        localidade: data.localidade || "",
+        uf: data.uf || ""
+      }));
+      toast.success("CEP encontrado!");
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+      toast.error("Erro ao buscar CEP");
+    }
+  };
+  
+  // Função para salvar novo endereço
+  const handleSalvarNovoEndereco = async () => {
+    if (!user) {
+      toast.error("Usuário não autenticado");
+      return;
+    }
+    
+    // Validação
+    if (!novoEndereco.name || !novoEndereco.cpf_cnpj || !novoEndereco.cep || 
+        !novoEndereco.logradouro || !novoEndereco.numero || !novoEndereco.bairro ||
+        !novoEndereco.localidade || !novoEndereco.uf) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('client_origins')
+        .insert({
+          user_id: user.id,
+          client_id: user.id, // Pode ser ajustado conforme necessidade
+          name: novoEndereco.name,
+          cpf_cnpj: novoEndereco.cpf_cnpj,
+          cep: novoEndereco.cep,
+          logradouro: novoEndereco.logradouro,
+          numero: novoEndereco.numero,
+          complemento: novoEndereco.complemento,
+          bairro: novoEndereco.bairro,
+          localidade: novoEndereco.localidade,
+          uf: novoEndereco.uf,
+          is_principal: novoEndereco.is_principal
+        });
+      
+      if (error) throw error;
+      
+      toast.success("Endereço cadastrado com sucesso!");
+      setAddOrigemModalOpen(false);
+      
+      // Resetar formulário
+      setNovoEndereco({
+        name: "",
+        cpf_cnpj: "",
+        cep: "",
+        logradouro: "",
+        numero: "",
+        complemento: "",
+        bairro: "",
+        localidade: "",
+        uf: "",
+        is_principal: false
+      });
+      
+      // Recarregar origens
+      const { data: origensData } = await supabase
+        .from('client_origins')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('is_principal', { ascending: false })
+        .order('created_at', { ascending: false});
+      
+      if (origensData) {
+        const origensCarregadas: OrigemItem[] = origensData.map((origem: any) => {
+          const enderecoFormatado = [
+            origem.logradouro, 
+            origem.numero, 
+            origem.complemento, 
+            origem.bairro, 
+            `${origem.localidade}/${origem.uf}`
+          ].filter(Boolean).join(', ');
+          
+          return {
+            id: origem.id,
+            nome: origem.name,
+            endereco: enderecoFormatado,
+            cep: origem.cep,
+            cpfCnpj: origem.cpf_cnpj,
+            isPrincipal: origem.is_principal
+          };
+        });
+        
+        setOrigens(origensCarregadas);
+        if (origensCarregadas.length > 0) {
+          setOrigemSelecionada(origensCarregadas[0]);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao salvar endereço:", error);
+      toast.error("Erro ao cadastrar endereço");
+    }
+  };
+  
   const handleCalcularFrete = async () => {
     // Validação
     if (!origemSelecionada) {
@@ -270,12 +391,21 @@ export default function SimuladorFrete() {
                 <span className="ml-2 text-sm text-muted-foreground">Carregando origens...</span>
               </div>
             ) : origens.length === 0 ? (
-              <div className="mt-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-                <p className="text-sm font-medium text-destructive">⚠️ Nenhuma origem disponível</p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Seu usuário não possui permissão para acessar endereços de origem. 
-                  Entre em contato com o administrador do sistema para configurar as permissões necessárias.
-                </p>
+              <div className="mt-2 space-y-3">
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+                  <p className="text-sm font-medium text-destructive">⚠️ Nenhuma origem disponível</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Cadastre um endereço de origem para começar a simular fretes.
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => setAddOrigemModalOpen(true)}
+                  className="w-full"
+                  size="lg"
+                >
+                  <Plus className="mr-2 h-5 w-5" />
+                  Cadastrar Endereço de Origem
+                </Button>
               </div>
             ) : (
               <>
@@ -303,14 +433,26 @@ export default function SimuladorFrete() {
                     </DialogHeader>
                     
                     {/* Campo de Busca */}
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input 
-                        placeholder="Buscar por nome ou endereço..." 
-                        value={buscaOrigem} 
-                        onChange={e => setBuscaOrigem(e.target.value)} 
-                        className="pl-10" 
-                      />
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input 
+                          placeholder="Buscar por nome ou endereço..." 
+                          value={buscaOrigem} 
+                          onChange={e => setBuscaOrigem(e.target.value)} 
+                          className="pl-10" 
+                        />
+                      </div>
+                      <Button
+                        onClick={() => {
+                          setModalOpen(false);
+                          setAddOrigemModalOpen(true);
+                        }}
+                        size="icon"
+                        variant="outline"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
                     </div>
 
                     <div className="max-h-[400px] space-y-3 overflow-y-auto">
@@ -458,6 +600,157 @@ export default function SimuladorFrete() {
             </p>
           </div>
         </Card>}
+
+      {/* Modal para adicionar novo endereço */}
+      <Dialog open={addOrigemModalOpen} onOpenChange={setAddOrigemModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Cadastrar Endereço de Origem</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="novo-nome">Nome / Razão Social *</Label>
+                <Input
+                  id="novo-nome"
+                  value={novoEndereco.name}
+                  onChange={(e) => setNovoEndereco({...novoEndereco, name: e.target.value})}
+                  placeholder="Digite o nome"
+                  className="mt-2"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="novo-cpfcnpj">CPF / CNPJ *</Label>
+                <Input
+                  id="novo-cpfcnpj"
+                  value={novoEndereco.cpf_cnpj}
+                  onChange={(e) => setNovoEndereco({...novoEndereco, cpf_cnpj: e.target.value})}
+                  placeholder="Digite o CPF ou CNPJ"
+                  className="mt-2"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="novo-cep">CEP *</Label>
+              <Input
+                id="novo-cep"
+                value={novoEndereco.cep}
+                onChange={(e) => {
+                  const cepFormatado = formatarCep(e.target.value);
+                  setNovoEndereco({...novoEndereco, cep: cepFormatado});
+                  if (cepFormatado.replace(/\D/g, '').length === 8) {
+                    buscarCepNovoEndereco(cepFormatado);
+                  }
+                }}
+                placeholder="00000-000"
+                maxLength={9}
+                className="mt-2"
+              />
+            </div>
+            
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="sm:col-span-2">
+                <Label htmlFor="novo-logradouro">Logradouro *</Label>
+                <Input
+                  id="novo-logradouro"
+                  value={novoEndereco.logradouro}
+                  onChange={(e) => setNovoEndereco({...novoEndereco, logradouro: e.target.value})}
+                  placeholder="Rua, Avenida, etc."
+                  className="mt-2"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="novo-numero">Número *</Label>
+                <Input
+                  id="novo-numero"
+                  value={novoEndereco.numero}
+                  onChange={(e) => setNovoEndereco({...novoEndereco, numero: e.target.value})}
+                  placeholder="Nº"
+                  className="mt-2"
+                />
+              </div>
+            </div>
+            
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="novo-complemento">Complemento</Label>
+                <Input
+                  id="novo-complemento"
+                  value={novoEndereco.complemento}
+                  onChange={(e) => setNovoEndereco({...novoEndereco, complemento: e.target.value})}
+                  placeholder="Apto, Bloco, etc."
+                  className="mt-2"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="novo-bairro">Bairro *</Label>
+                <Input
+                  id="novo-bairro"
+                  value={novoEndereco.bairro}
+                  onChange={(e) => setNovoEndereco({...novoEndereco, bairro: e.target.value})}
+                  placeholder="Digite o bairro"
+                  className="mt-2"
+                />
+              </div>
+            </div>
+            
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="novo-localidade">Cidade *</Label>
+                <Input
+                  id="novo-localidade"
+                  value={novoEndereco.localidade}
+                  onChange={(e) => setNovoEndereco({...novoEndereco, localidade: e.target.value})}
+                  placeholder="Digite a cidade"
+                  className="mt-2"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="novo-uf">UF *</Label>
+                <Input
+                  id="novo-uf"
+                  value={novoEndereco.uf}
+                  onChange={(e) => setNovoEndereco({...novoEndereco, uf: e.target.value.toUpperCase()})}
+                  placeholder="SP"
+                  maxLength={2}
+                  className="mt-2"
+                />
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="novo-principal"
+                checked={novoEndereco.is_principal}
+                onChange={(e) => setNovoEndereco({...novoEndereco, is_principal: e.target.checked})}
+                className="h-4 w-4 rounded border-border"
+              />
+              <Label htmlFor="novo-principal" className="cursor-pointer">
+                Definir como endereço principal
+              </Label>
+            </div>
+            
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setAddOrigemModalOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button onClick={handleSalvarNovoEndereco}>
+                Salvar Endereço
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Calculate Button - Fixed at bottom on mobile */}
       <div className="sticky bottom-4 z-10">
