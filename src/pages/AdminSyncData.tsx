@@ -17,11 +17,14 @@ export default function AdminSyncData() {
   const [syncedEmissoes, setSyncedEmissoes] = useState<any[]>([]);
   const [syncedUsuarios, setSyncedUsuarios] = useState<any[]>([]);
   const [tableStats, setTableStats] = useState<any[]>([]);
+  const [allMysqlTables, setAllMysqlTables] = useState<string[]>([]);
+  const [loadingTables, setLoadingTables] = useState(false);
 
   useEffect(() => {
     loadSyncLogs();
     loadSyncedData();
     loadTableStats();
+    loadAllMysqlTables();
 
     // Configurar realtime para sync_logs
     const logsChannel = supabase
@@ -198,6 +201,30 @@ export default function AdminSyncData() {
     setTableStats(stats);
   };
 
+  const loadAllMysqlTables = async () => {
+    setLoadingTables(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-mysql-data', {
+        body: { action: 'list-tables' }
+      });
+
+      if (error) {
+        console.error('Erro ao listar tabelas:', error);
+        toast.error('Erro ao listar tabelas do MySQL');
+        return;
+      }
+
+      if (data.success) {
+        setAllMysqlTables(data.tables || []);
+        console.log('Tabelas MySQL encontradas:', data.tables);
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+    } finally {
+      setLoadingTables(false);
+    }
+  };
+
   const handleSync = async (tableName?: string) => {
     setLoading(true);
 
@@ -278,14 +305,83 @@ export default function AdminSyncData() {
         </Button>
       </div>
 
-      <Tabs defaultValue="tabelas" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="tabelas">Status de Tabelas</TabsTrigger>
+      <Tabs defaultValue="todas-tabelas" className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="todas-tabelas">Todas Tabelas MySQL</TabsTrigger>
+          <TabsTrigger value="tabelas">Status Sincronizadas</TabsTrigger>
           <TabsTrigger value="logs">Logs</TabsTrigger>
           <TabsTrigger value="clientes">Clientes ({syncedClientes.length})</TabsTrigger>
           <TabsTrigger value="emissoes">Emissões ({syncedEmissoes.length})</TabsTrigger>
           <TabsTrigger value="usuarios">Usuários ({syncedUsuarios.length})</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="todas-tabelas" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Todas as Tabelas do MySQL</CardTitle>
+                  <CardDescription>
+                    Lista completa de {allMysqlTables.length} tabelas encontradas no banco MySQL
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={loadAllMysqlTables}
+                  disabled={loadingTables}
+                  variant="outline"
+                  size="sm"
+                >
+                  {loadingTables ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Carregando...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Atualizar
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loadingTables ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Loader2 className="h-12 w-12 mx-auto mb-4 opacity-50 animate-spin" />
+                  <p>Carregando lista de tabelas...</p>
+                </div>
+              ) : allMysqlTables.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhuma tabela encontrada</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {allMysqlTables.map((tableName) => {
+                    const isSynced = ['Cliente', 'Emissao', 'Usuarios'].includes(tableName);
+                    return (
+                      <div
+                        key={tableName}
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Database className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-mono text-sm">{tableName}</span>
+                        </div>
+                        {isSynced && (
+                          <Badge variant="default" className="text-xs">
+                            Sincronizada
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="tabelas" className="space-y-4">
           <Card>
