@@ -22,6 +22,7 @@ import {
   Search,
   CreditCard,
   Receipt,
+  Database,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,6 +55,7 @@ const adminMenuItems: MenuItem[] = [
   { title: "Gerenciar Créditos", url: "/admin/creditos", icon: CreditCard },
   { title: "Ajustes de Custos", url: "/admin/ajustes-custo", icon: Receipt },
   { title: "Gestão de Clientes", url: "/admin/gestao-clientes", icon: Users },
+  { title: "Sincronização MySQL", url: "/admin/sync-mysql", icon: Database },
   { title: "Configurações do Sistema", url: "/admin/configuracoes-gerais", icon: Settings },
 ];
 
