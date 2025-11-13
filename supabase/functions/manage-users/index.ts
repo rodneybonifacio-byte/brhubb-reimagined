@@ -52,8 +52,9 @@ Deno.serve(async (req) => {
 
     console.log('Criando usuário:', { email, role, initialCredits })
 
-    // Buscar créditos padrão se não especificado
-    let creditsToAssign = initialCredits || 0
+    // Buscar configurações padrão se não fornecido créditos
+    let creditsToAssign = initialCredits
+    
     if (role === 'cliente' && !initialCredits) {
       const { data: settingData } = await supabaseClient
         .from('system_settings')
@@ -62,8 +63,10 @@ Deno.serve(async (req) => {
         .single()
       
       if (settingData) {
-        const settingValue = settingData.setting_value as any
-        creditsToAssign = settingValue.amount || 100
+        creditsToAssign = settingData.setting_value.amount
+        console.log('Usando créditos padrão do sistema:', creditsToAssign)
+      } else {
+        creditsToAssign = 100 // Fallback
       }
     }
 

@@ -247,16 +247,18 @@ export default function Configuracoes() {
 
               {role === 'cliente' && (
                 <div className="space-y-2">
-                  <Label htmlFor="creditos">Créditos Iniciais (R$) *</Label>
+                  <Label htmlFor="creditos">Créditos Iniciais (R$)</Label>
                   <Input
                     id="creditos"
                     type="number"
                     step="0.01"
-                    placeholder="100.00"
+                    placeholder={defaultCredits.toString()}
                     value={creditosInicial}
                     onChange={(e) => setCreditosInicial(e.target.value)}
-                    required
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Deixe em branco para usar o padrão do sistema (R$ {defaultCredits.toFixed(2)})
+                  </p>
                 </div>
               )}
             </div>
