@@ -109,52 +109,18 @@ export default function Configuracoes() {
     try {
       setCriando(true);
 
-      // 1. Criar usuário via Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password: senha,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
+      // Chamar edge function para criar usuário
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: {
+          email,
+          password: senha,
+          role: role,
+          initialCredits: role === 'cliente' ? parseFloat(creditosInicial) : 0,
         },
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('Falha ao criar usuário');
-
-      console.log('Usuário criado:', authData.user.id);
-
-      // 2. Criar role do usuário
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: authData.user.id,
-          role: role,
-        });
-
-      if (roleError) {
-        console.error('Erro ao criar role:', roleError);
-        throw new Error('Falha ao atribuir permissões');
-      }
-
-      console.log('Role criada:', role);
-
-      // 3. Se for cliente, criar créditos iniciais
-      if (role === 'cliente') {
-        const { error: creditsError } = await supabase
-          .from('client_credits')
-          .insert({
-            client_id: authData.user.id,
-            client_name: email,
-            credits: parseFloat(creditosInicial) || 0,
-          });
-
-        if (creditsError) {
-          console.error('Erro ao criar créditos:', creditsError);
-          throw new Error('Falha ao criar créditos');
-        }
-
-        console.log('Créditos criados:', creditosInicial);
-      }
+      if (error) throw error;
+      if (!data?.success) throw new Error('Falha ao criar usuário');
 
       toast.success(`Usuário criado com sucesso! ${role === 'cliente' ? `Créditos: R$ ${creditosInicial}` : ''}`);
       
