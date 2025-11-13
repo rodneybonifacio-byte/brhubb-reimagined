@@ -19,6 +19,7 @@ import {
   X,
   Search,
   CreditCard,
+  Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +50,7 @@ const menuItems: MenuItem[] = [
 
 const adminMenuItems: MenuItem[] = [
   { title: "Gerenciar Créditos", url: "/admin/creditos", icon: CreditCard },
+  { title: "Ajustes de Custos", url: "/admin/ajustes-custo", icon: Receipt },
 ];
 
 export function AppLayout() {

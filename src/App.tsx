@@ -18,6 +18,7 @@ import Coletas from "./pages/Coletas";
 import Faturas from "./pages/Faturas";
 import Clientes from "./pages/Clientes";
 import AdminCredits from "./pages/AdminCredits";
+import AdminCostAdjustments from "./pages/AdminCostAdjustments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/financeiro/faturas" element={<Faturas />} />
               <Route path="/cadastros/clientes" element={<Clientes />} />
               <Route path="/admin/creditos" element={<AdminCredits />} />
+              <Route path="/admin/ajustes-custo" element={<AdminCostAdjustments />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
