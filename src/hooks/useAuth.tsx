@@ -13,27 +13,22 @@ export function useAuth() {
   const forceRefreshAdminStatus = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
       
-      console.log('Force refresh admin status:', { data, error });
-      
-      if (!error && data) {
+      if (data) {
         setIsAdmin(data.role === 'admin');
       }
     }
   };
 
-  // Forçar verificação de admin a cada 2 segundos (apenas para debug)
+  // Remover o intervalo de verificação constante
   useEffect(() => {
-    const interval = setInterval(() => {
-      forceRefreshAdminStatus();
-    }, 2000);
-
-    return () => clearInterval(interval);
+    // Verificar apenas uma vez no mount
+    forceRefreshAdminStatus();
   }, []);
 
   useEffect(() => {
@@ -52,19 +47,7 @@ export function useAuth() {
         setIsAdmin(data.role === 'admin');
         console.log('User is admin:', data.role === 'admin');
       } else {
-        // Se não encontrou role, criar uma role de admin automaticamente
-        console.log('No role found, creating admin role...');
-        const { error: insertError } = await supabase
-          .from('user_roles')
-          .insert({ user_id: userId, role: 'admin' });
-        
-        if (!insertError) {
-          setIsAdmin(true);
-          console.log('Admin role created successfully');
-        } else {
-          console.error('Failed to create admin role:', insertError);
-          setIsAdmin(false);
-        }
+        setIsAdmin(false);
       }
     } catch (err) {
       console.error('Error checking admin status:', err);
