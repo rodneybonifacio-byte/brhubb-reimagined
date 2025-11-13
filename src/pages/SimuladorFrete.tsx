@@ -280,61 +280,83 @@ export default function SimuladorFrete() {
                       )}
                     </Button>
                   </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Selecionar Origem</DialogTitle>
-              </DialogHeader>
-              
-              {/* Campo de Busca */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Buscar por nome ou endereço..." value={buscaOrigem} onChange={e => setBuscaOrigem(e.target.value)} className="pl-10" />
-              </div>
-
-              <div className="max-h-[400px] space-y-3 overflow-y-auto">
-                {origensFiltradas.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">
-                    Nenhuma origem encontrada
-                  </p> : origensFiltradas.map(origem => <button key={origem.id} onClick={() => {
-                setOrigemSelecionada(origem);
-                setModalOpen(false);
-              }} className={`w-full rounded-lg border p-4 text-left transition-all hover:border-primary hover:bg-accent ${origemSelecionada?.id === origem.id ? "border-primary bg-accent" : "border-border"}`}>
-                    <div className="flex items-start gap-3">
-                      <MapPin className="mt-1 h-5 w-5 text-primary" />
-                      <div className="flex-1">
-                        <p className="font-semibold">
-                          {origem.nome}
-                          {origem.isPrincipal && <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                              Principal
-                            </span>}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{origem.endereco}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">CEP: {origem.cep}</p>
-                      </div>
-                      {origemSelecionada?.id === origem.id && <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary">
-                          <svg className="h-4 w-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>}
+                  
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Selecionar Origem</DialogTitle>
+                    </DialogHeader>
+                    
+                    {/* Campo de Busca */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input 
+                        placeholder="Buscar por nome ou endereço..." 
+                        value={buscaOrigem} 
+                        onChange={e => setBuscaOrigem(e.target.value)} 
+                        className="pl-10" 
+                      />
                     </div>
-                  </button>)}
-              </div>
-            </DialogContent>
-          </Dialog>
-          
-          {/* Exibir endereço da origem selecionada */}
-          {origemSelecionada && (
-            <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
-              <p className="text-sm font-medium text-foreground">
-                {origemSelecionada.endereco}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                CEP: {origemSelecionada.cep}
-              </p>
-            </div>
-          )}
-        </>
-      )}
-    </div>
+
+                    <div className="max-h-[400px] space-y-3 overflow-y-auto">
+                      {origensFiltradas.length === 0 ? (
+                        <p className="py-8 text-center text-sm text-muted-foreground">
+                          Nenhuma origem encontrada
+                        </p>
+                      ) : (
+                        origensFiltradas.map(origem => (
+                          <button 
+                            key={origem.id} 
+                            onClick={() => {
+                              setOrigemSelecionada(origem);
+                              setModalOpen(false);
+                            }} 
+                            className={`w-full rounded-lg border p-4 text-left transition-all hover:border-primary hover:bg-accent ${
+                              origemSelecionada?.id === origem.id ? "border-primary bg-accent" : "border-border"
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <MapPin className="mt-1 h-5 w-5 text-primary" />
+                              <div className="flex-1">
+                                <p className="font-semibold">
+                                  {origem.nome}
+                                  {origem.isPrincipal && (
+                                    <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                                      Principal
+                                    </span>
+                                  )}
+                                </p>
+                                <p className="text-sm text-muted-foreground">{origem.endereco}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">CEP: {origem.cep}</p>
+                              </div>
+                              {origemSelecionada?.id === origem.id && (
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary">
+                                  <svg className="h-4 w-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                
+                {/* Exibir endereço da origem selecionada */}
+                {origemSelecionada && (
+                  <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
+                    <p className="text-sm font-medium text-foreground">
+                      {origemSelecionada.endereco}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      CEP: {origemSelecionada.cep}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
 
           {/* CEP Destino */}
           <div className="mb-6">
