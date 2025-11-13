@@ -66,12 +66,10 @@ serve(async (req) => {
       username: Deno.env.get('MYSQL_USER') ?? '',
       password: Deno.env.get('MYSQL_PASSWORD') ?? '',
       port: parseInt(Deno.env.get('MYSQL_PORT') ?? '3306'),
+      db: Deno.env.get('MYSQL_DATABASE') ?? 'dbhomol',
     });
 
-    console.log('Connected to MySQL');
-
-    // Selecionar database
-    await mysqlClient.execute('USE dbhomol');
+    console.log('Connected to MySQL database:', Deno.env.get('MYSQL_DATABASE') ?? 'dbhomol');
 
     let totalProcessed = 0;
     let totalSuccess = 0;
@@ -88,8 +86,7 @@ serve(async (req) => {
           email,
           cpfCnpj,
           telefone,
-          planoId,
-          ativo
+          planoId
         FROM Cliente
         LIMIT 100
       `);
@@ -107,7 +104,7 @@ serve(async (req) => {
               cpf_cnpj: cliente.cpfCnpj,
               telefone: cliente.telefone,
               plano_id: cliente.planoId,
-              ativo: cliente.ativo === 1,
+              ativo: true, // Default como ativo
               synced_at: new Date().toISOString()
             }, {
               onConflict: 'mysql_id'
