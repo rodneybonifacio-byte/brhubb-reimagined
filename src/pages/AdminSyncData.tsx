@@ -22,7 +22,7 @@ export default function AdminSyncData() {
     loadSyncedData();
 
     // Configurar realtime para sync_logs
-    const channel = supabase
+    const logsChannel = supabase
       .channel('sync-logs-changes')
       .on(
         'postgres_changes',
@@ -32,15 +32,68 @@ export default function AdminSyncData() {
           table: 'sync_logs'
         },
         (payload) => {
-          console.log('Realtime update:', payload);
-          // Recarregar logs quando houver mudanças
+          console.log('Realtime sync_logs update:', payload);
           loadSyncLogs();
         }
       )
       .subscribe();
 
+    // Configurar realtime para mysql_clientes
+    const clientesChannel = supabase
+      .channel('mysql-clientes-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'mysql_clientes'
+        },
+        (payload) => {
+          console.log('Realtime mysql_clientes update:', payload);
+          loadSyncedData();
+        }
+      )
+      .subscribe();
+
+    // Configurar realtime para mysql_emissoes
+    const emissoesChannel = supabase
+      .channel('mysql-emissoes-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'mysql_emissoes'
+        },
+        (payload) => {
+          console.log('Realtime mysql_emissoes update:', payload);
+          loadSyncedData();
+        }
+      )
+      .subscribe();
+
+    // Configurar realtime para mysql_usuarios
+    const usuariosChannel = supabase
+      .channel('mysql-usuarios-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'mysql_usuarios'
+        },
+        (payload) => {
+          console.log('Realtime mysql_usuarios update:', payload);
+          loadSyncedData();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(logsChannel);
+      supabase.removeChannel(clientesChannel);
+      supabase.removeChannel(emissoesChannel);
+      supabase.removeChannel(usuariosChannel);
     };
   }, []);
 
