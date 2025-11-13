@@ -143,7 +143,6 @@ serve(async (req) => {
           clienteId,
           codigoObjeto,
           status,
-          valorFrete,
           transportadora,
           servico,
           destinatario,
@@ -168,7 +167,7 @@ serve(async (req) => {
               codigo_objeto: emissao.codigoObjeto,
               codigo_rastreio: emissao.codigoObjeto, // Usar codigoObjeto como rastreio
               status: emissao.status,
-              valor_frete: emissao.valorFrete,
+              valor_frete: null, // Campo não existe no MySQL
               transportadora: emissao.transportadora,
               servico: emissao.servico,
               destinatario: emissao.destinatario ? JSON.parse(emissao.destinatario) : null,
