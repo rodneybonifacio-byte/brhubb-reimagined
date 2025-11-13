@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Plus, Package2, Search, Filter, Download, MoreVertical, Loader2, Printer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { emissoes, type EmissaoItem } from "@/lib/api";
+import { emissoes } from "@/lib/api";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,55 +25,106 @@ const statusTabs = [
   { label: "Entregues", value: "ENTREGUE", count: 0 },
 ];
 
+interface EmissaoData {
+  id: string;
+  mysql_id: string;
+  cliente_id: string | null;
+  codigo_objeto: string | null;
+  codigo_rastreio: string | null;
+  transportadora: string | null;
+  servico: string | null;
+  status: string | null;
+  valor_frete: number | null;
+  data_emissao: string | null;
+  data_postagem: string | null;
+  remetente: any;
+  destinatario: any;
+  dimensoes: any;
+}
+
 export default function PrePostagem() {
   const navigate = useNavigate();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [emissoesData, setEmissoesData] = useState<EmissaoItem[]>([]);
+  const [emissoesData, setEmissoesData] = useState<EmissaoData[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const limit = 20;
 
   useEffect(() => {
-    carregarEmissoes();
-  }, [activeTab, searchQuery, page]);
+    if (!authLoading && user) {
+      carregarEmissoes();
+    }
+  }, [activeTab, searchQuery, page, user, authLoading, isAdmin]);
 
   const carregarEmissoes = async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
       
-      // SEGURANÇA: A API externa (BRHUB) filtra automaticamente as emissões
-      // pelo usuário autenticado no token. Cada usuário só vê suas próprias etiquetas.
-      // Admins têm acesso a todas através de seus tokens admin.
-      const response = await emissoes.listar({
-        page,
-        limit: 20,
-        status: activeTab || undefined,
-        search: searchQuery || undefined,
-      });
-      setEmissoesData(response.data);
-      setTotalPages(response.meta.totalPages);
+      // Construir query base - usando 'as any' para evitar erros de tipo do TypeScript
+      let query = supabase
+        .from('mysql_emissoes' as any)
+        .select('*', { count: 'exact' })
+        .order('data_emissao', { ascending: false });
+
+      // CONTROLE DE ACESSO: Admin vê todas as emissões, usuários comuns veem apenas as suas
+      if (!isAdmin) {
+        query = query.eq('cliente_id', user.id);
+      }
+
+      // Filtrar por status se selecionado
+      if (activeTab) {
+        query = query.eq('status', activeTab);
+      }
+
+      // Filtrar por busca (código de rastreio, código objeto, ou nome do destinatário)
+      if (searchQuery) {
+        query = query.or(
+          `codigo_objeto.ilike.%${searchQuery}%,codigo_rastreio.ilike.%${searchQuery}%,destinatario->>nome.ilike.%${searchQuery}%`
+        );
+      }
+
+      // Paginação
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      query = query.range(from, to);
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error('Erro ao carregar emissões:', error);
+        toast.error("Erro ao carregar etiquetas");
+        return;
+      }
+
+      setEmissoesData((data as unknown as EmissaoData[]) || []);
+      setTotalPages(Math.ceil((count || 0) / limit));
     } catch (error: any) {
-      toast.error(error.message || "Erro ao carregar etiquetas");
+      console.error('Erro:', error);
+      toast.error("Erro ao carregar etiquetas");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleImprimir = (emissao: EmissaoItem) => {
+  const handleImprimir = (emissao: EmissaoData) => {
     let url = "";
     if (emissao.transportadora === "CORREIOS") {
-      url = emissoes.obterEtiquetaCorreiosPdf(emissao.id);
+      url = emissoes.obterEtiquetaCorreiosPdf(emissao.mysql_id);
     } else {
-      url = emissoes.obterEtiquetaPdf(emissao.id);
+      url = emissoes.obterEtiquetaPdf(emissao.mysql_id);
     }
-    navigate(`/envios/visualizar?url=${encodeURIComponent(url)}&id=${emissao.id}`);
+    navigate(`/envios/visualizar?url=${encodeURIComponent(url)}&id=${emissao.mysql_id}`);
   };
 
-  const handleImprimirDeclaracao = (emissao: EmissaoItem) => {
+  const handleImprimirDeclaracao = (emissao: EmissaoData) => {
     if (emissao.transportadora === "CORREIOS") {
-      const url = emissoes.obterDeclaracaoCorreiosPdf(emissao.id);
-      navigate(`/envios/visualizar?url=${encodeURIComponent(url)}&id=${emissao.id}`);
+      const url = emissoes.obterDeclaracaoCorreiosPdf(emissao.mysql_id);
+      navigate(`/envios/visualizar?url=${encodeURIComponent(url)}&id=${emissao.mysql_id}`);
     }
   };
 
@@ -200,12 +253,9 @@ export default function PrePostagem() {
                 <div className="flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono text-lg font-bold">
-                      {emissao.codigoObjeto || emissao.id}
+                      {emissao.codigo_objeto || emissao.id}
                     </span>
-                    {getStatusBadge(emissao.status)}
-                    {emissao.statusRastreio && (
-                      <Badge variant="outline">{emissao.statusRastreio}</Badge>
-                    )}
+                    {getStatusBadge(emissao.status || '')}
                   </div>
                   
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -231,27 +281,25 @@ export default function PrePostagem() {
                   <div className="flex flex-wrap gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Serviço: </span>
-                      <span className="font-medium">{emissao.servico || emissao.nomeServico}</span>
+                      <span className="font-medium">{emissao.servico}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Transportadora: </span>
                       <span className="font-medium">{emissao.transportadora}</span>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Valor: </span>
-                      <span className="font-medium">R$ {emissao.valor || emissao.valorFrete}</span>
-                    </div>
-                    {emissao.custoFrete && (
+                    {emissao.valor_frete && (
                       <div>
-                        <span className="text-muted-foreground">Custo: </span>
-                        <span className="font-medium">R$ {emissao.custoFrete}</span>
+                        <span className="text-muted-foreground">Valor: </span>
+                        <span className="font-medium">R$ {Number(emissao.valor_frete).toFixed(2)}</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="text-xs text-muted-foreground">
-                    Criado em: {new Date(emissao.criadoEm).toLocaleString("pt-BR")}
-                  </div>
+                  {emissao.data_emissao && (
+                    <div className="text-xs text-muted-foreground">
+                      Criado em: {new Date(emissao.data_emissao).toLocaleString("pt-BR")}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-2 sm:flex-col">
