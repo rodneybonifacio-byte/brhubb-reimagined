@@ -47,11 +47,13 @@ serve(async (req) => {
     }
 
     // Conectar ao MySQL
+    // ATENÇÃO: Credenciais temporárias APENAS PARA TESTE
+    // TODO: Mover para secrets assim que possível
     const mysqlClient = await new Client().connect({
-      hostname: Deno.env.get('MYSQL_HOST') ?? '',
-      username: Deno.env.get('MYSQL_USER') ?? '',
-      password: Deno.env.get('MYSQL_PASSWORD') ?? '',
-      port: parseInt(Deno.env.get('MYSQL_PORT') ?? '3306'),
+      hostname: '69.62.86.39',
+      username: 'root',
+      password: '102030@2025',
+      port: 3306,
     });
 
     console.log('Connected to MySQL');
