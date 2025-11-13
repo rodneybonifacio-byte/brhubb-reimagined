@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { auth } from "@/lib/api";
 import { NavLink } from "@/components/NavLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Home,
   Users,
@@ -17,6 +18,7 @@ import {
   LogOut,
   X,
   Search,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,10 +47,15 @@ const menuItems: MenuItem[] = [
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
+const adminMenuItems: MenuItem[] = [
+  { title: "Gerenciar Créditos", url: "/admin/creditos", icon: CreditCard },
+];
+
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
   const handleLogout = () => {
     auth.removeToken();
@@ -78,7 +85,7 @@ export function AppLayout() {
         </div>
 
         {/* Menu */}
-        <nav className="flex-1 space-y-1 p-3">
+        <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.url;
             return (
@@ -97,6 +104,35 @@ export function AppLayout() {
               </NavLink>
             );
           })}
+          
+          {/* Menu Admin */}
+          {isAdmin && (
+            <>
+              <div className="my-2 border-t border-border pt-2">
+                <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                  Administração
+                </p>
+              </div>
+              {adminMenuItems.map((item) => {
+                const isActive = location.pathname === item.url;
+                return (
+                  <NavLink
+                    key={item.title}
+                    to={item.url}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                    <span>{item.title}</span>
+                  </NavLink>
+                );
+              })}
+            </>
+          )}
         </nav>
 
         {/* User Section */}

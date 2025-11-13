@@ -17,6 +17,7 @@ import AcompanhamentoEnvios from "./pages/AcompanhamentoEnvios";
 import Coletas from "./pages/Coletas";
 import Faturas from "./pages/Faturas";
 import Clientes from "./pages/Clientes";
+import AdminCredits from "./pages/AdminCredits";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/acompanhamento/coletas" element={<Coletas />} />
               <Route path="/financeiro/faturas" element={<Faturas />} />
               <Route path="/cadastros/clientes" element={<Clientes />} />
+              <Route path="/admin/creditos" element={<AdminCredits />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

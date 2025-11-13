@@ -6,11 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MapPin, Package, DollarSign, Search, Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MapPin, Package, DollarSign, Search, Loader2, AlertCircle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { remetentes, frete, emissoes, auth, type RemetenteItem, type CotacaoItem } from "@/lib/api";
 import { CotacaoResultCard } from "@/components/CotacaoResultCard";
+import { getClientCredits, ensureClientCreditsExist, consumeCredit } from "@/lib/credits";
 
 export default function NovaPrePostagem() {
   const navigate = useNavigate();
@@ -51,10 +53,28 @@ export default function NovaPrePostagem() {
   // Estado criação
   const [criandoEtiqueta, setCriandoEtiqueta] = useState(false);
   const [cadastrarDestinatario, setCadastrarDestinatario] = useState(false);
+  
+  // Estado créditos
+  const [clientCredits, setClientCredits] = useState<number | null>(null);
+  const [loadingCredits, setLoadingCredits] = useState(true);
 
   useEffect(() => {
     carregarRemetentes();
+    carregarCreditos();
   }, []);
+
+  const carregarCreditos = async () => {
+    try {
+      setLoadingCredits(true);
+      await ensureClientCreditsExist();
+      const credits = await getClientCredits();
+      setClientCredits(credits);
+    } catch (error) {
+      console.error("Erro ao carregar créditos:", error);
+    } finally {
+      setLoadingCredits(false);
+    }
+  };
 
   const carregarRemetentes = async () => {
     try {
@@ -157,6 +177,16 @@ export default function NovaPrePostagem() {
       return;
     }
 
+    // Verificar créditos antes de criar etiqueta
+    const valorFrete = parseFloat(cotacaoSelecionada.preco);
+    if (clientCredits !== null && clientCredits < valorFrete) {
+      toast.error(
+        `Crédito insuficiente! Saldo: R$ ${clientCredits.toFixed(2)} | Necessário: R$ ${valorFrete.toFixed(2)}`,
+        { duration: 5000 }
+      );
+      return;
+    }
+
     try {
       setCriandoEtiqueta(true);
       
@@ -197,6 +227,16 @@ export default function NovaPrePostagem() {
         valorDeclarado: parseFloat(valorDeclarado) || 0,
       });
 
+      // Consumir crédito após criação bem-sucedida
+      const creditResult = await consumeCredit(response.id, valorFrete);
+      if (!creditResult.success) {
+        console.warn("Aviso ao consumir crédito:", creditResult.message);
+        // Não falha a criação se não conseguir consumir o crédito
+      } else {
+        // Atualizar saldo de créditos
+        await carregarCreditos();
+      }
+
       toast.success(`Etiqueta criada com sucesso!`);
       
       // Navegar para página de visualização da etiqueta usando a URL correta da API
@@ -219,6 +259,33 @@ export default function NovaPrePostagem() {
         <h1 className="text-2xl font-bold">Nova etiqueta</h1>
         <p className="text-sm text-muted-foreground">Preencha os dados para criar uma nova etiqueta de envio</p>
       </div>
+
+      {/* Indicador de Créditos */}
+      {!loadingCredits && clientCredits !== null && (
+        <Card className={`border-none shadow-sm ${clientCredits < 10 ? 'bg-destructive/10' : 'bg-primary/5'}`}>
+          <CardContent className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <div className={`rounded-full p-2 ${clientCredits < 10 ? 'bg-destructive/20' : 'bg-primary/20'}`}>
+                <CreditCard className={`h-5 w-5 ${clientCredits < 10 ? 'text-destructive' : 'text-primary'}`} />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Saldo de Créditos</p>
+                <p className={`text-2xl font-bold ${clientCredits < 10 ? 'text-destructive' : 'text-primary'}`}>
+                  R$ {clientCredits.toFixed(2)}
+                </p>
+              </div>
+            </div>
+            {clientCredits < 10 && (
+              <Alert className="max-w-md border-destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Saldo baixo! Entre em contato com o suporte para adicionar créditos.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Origem */}

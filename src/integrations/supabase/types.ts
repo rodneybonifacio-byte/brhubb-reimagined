@@ -14,16 +14,145 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      client_credits: {
+        Row: {
+          client_id: string
+          client_name: string
+          created_at: string | null
+          credits: number
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          client_name: string
+          created_at?: string | null
+          credits?: number
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          client_name?: string
+          created_at?: string | null
+          credits?: number
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      credit_transactions: {
+        Row: {
+          amount: number
+          client_id: string
+          created_at: string | null
+          description: string | null
+          emission_id: string | null
+          id: string
+          new_balance: number
+          performed_by: string | null
+          previous_balance: number
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          created_at?: string | null
+          description?: string | null
+          emission_id?: string | null
+          id?: string
+          new_balance: number
+          performed_by?: string | null
+          previous_balance: number
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          created_at?: string | null
+          description?: string | null
+          emission_id?: string | null
+          id?: string
+          new_balance?: number
+          performed_by?: string | null
+          previous_balance?: number
+          transaction_type?: string
+        }
+        Relationships: []
+      }
+      shipping_cost_adjustments: {
+        Row: {
+          adjusted_by: string
+          adjusted_cost: number
+          created_at: string | null
+          emission_id: string
+          id: string
+          original_cost: number
+          reason: string | null
+          sale_price: number
+        }
+        Insert: {
+          adjusted_by: string
+          adjusted_cost: number
+          created_at?: string | null
+          emission_id: string
+          id?: string
+          original_cost: number
+          reason?: string | null
+          sale_price: number
+        }
+        Update: {
+          adjusted_by?: string
+          adjusted_cost?: number
+          created_at?: string | null
+          emission_id?: string
+          id?: string
+          original_cost?: number
+          reason?: string | null
+          sale_price?: number
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "cliente"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +279,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "cliente"],
+    },
   },
 } as const
