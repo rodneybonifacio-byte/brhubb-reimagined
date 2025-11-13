@@ -245,6 +245,16 @@ export default function AdminGestaoClientes() {
         return;
       }
 
+      toast.warning("Funcionalidade de impersonation desabilitada por segurança", {
+        description: "Cada usuário só pode acessar suas próprias etiquetas. A API externa valida isso através do token de autenticação.",
+        duration: 8000,
+      });
+
+      // Comentado por segurança - não podemos impersonar sem ter as credenciais reais do cliente
+      // A API externa filtra etiquetas pelo token, então impersonation sem token real do cliente
+      // permitiria admin ver suas próprias etiquetas, não as do cliente
+      
+      /*
       // Salvar dados do admin atual antes de impersonar
       const currentToken = auth.getToken();
       const currentUserData = auth.getUserData();
@@ -267,6 +277,7 @@ export default function AdminGestaoClientes() {
       setTimeout(() => {
         window.location.reload();
       }, 100);
+      */
     } catch (error) {
       console.error("Erro ao logar como cliente:", error);
       toast.error("Erro ao fazer login como cliente");
@@ -362,6 +373,8 @@ export default function AdminGestaoClientes() {
                             onClick={() => handleLoginAsClient(cliente)}
                             variant="secondary"
                             size="sm"
+                            disabled
+                            title="Funcionalidade desabilitada por segurança - cada usuário só vê suas próprias etiquetas"
                           >
                             <LogIn className="h-4 w-4 mr-2" />
                             Logar como
