@@ -27,8 +27,10 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Settings, Percent, Truck, Save, Plus } from "lucide-react";
+import { Settings, Percent, Truck, Save, Plus, LogIn } from "lucide-react";
 import { z } from "zod";
+import { useNavigate } from "react-router-dom";
+import { auth } from "@/lib/api";
 
 const clientSettingSchema = z.object({
   markup_percentage: z.number()
@@ -53,6 +55,7 @@ const AVAILABLE_CARRIERS = [
 ];
 
 export default function AdminGestaoClientes() {
+  const navigate = useNavigate();
   const [clientes, setClientes] = useState<ClientSetting[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingClient, setEditingClient] = useState<ClientSetting | null>(null);
@@ -228,6 +231,48 @@ export default function AdminGestaoClientes() {
     }
   };
 
+  const handleLoginAsClient = async (cliente: ClientSetting) => {
+    try {
+      // Buscar credenciais do cliente na tabela client_credits
+      const { data: clientData, error: clientError } = await supabase
+        .from('client_credits')
+        .select('client_name')
+        .eq('client_id', cliente.client_id)
+        .single();
+
+      if (clientError) {
+        toast.error("Cliente não encontrado");
+        return;
+      }
+
+      // Salvar dados do admin atual antes de impersonar
+      const currentToken = auth.getToken();
+      const currentUserData = auth.getUserData();
+      
+      if (currentToken && currentUserData) {
+        localStorage.setItem('admin_impersonation_token', currentToken);
+        localStorage.setItem('admin_impersonation_user', JSON.stringify(currentUserData));
+        localStorage.setItem('is_impersonating', 'true');
+        localStorage.setItem('impersonated_client_id', cliente.client_id);
+        localStorage.setItem('impersonated_client_name', clientData.client_name);
+      }
+
+      toast.success(`Logado como ${clientData.client_name}`, {
+        description: "Você está visualizando o sistema como este cliente",
+        duration: 5000,
+      });
+
+      // Recarregar a página para atualizar o contexto
+      navigate('/');
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+    } catch (error) {
+      console.error("Erro ao logar como cliente:", error);
+      toast.error("Erro ao fazer login como cliente");
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6 max-w-6xl">
       <div className="flex items-center justify-between">
@@ -304,14 +349,24 @@ export default function AdminGestaoClientes() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          onClick={() => handleEditarCliente(cliente)}
-                          variant="outline"
-                          size="sm"
-                        >
-                          <Settings className="h-4 w-4 mr-2" />
-                          Configurar
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleEditarCliente(cliente)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Settings className="h-4 w-4 mr-2" />
+                            Configurar
+                          </Button>
+                          <Button
+                            onClick={() => handleLoginAsClient(cliente)}
+                            variant="secondary"
+                            size="sm"
+                          >
+                            <LogIn className="h-4 w-4 mr-2" />
+                            Logar como
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

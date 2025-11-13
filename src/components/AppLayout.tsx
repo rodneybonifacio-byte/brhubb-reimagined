@@ -5,6 +5,7 @@ import { NavLink } from "@/components/NavLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import {
   Home,
   Users,
@@ -60,7 +61,7 @@ export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isImpersonating } = useAuth();
   
   // Monitorar expiração do token e avisar o usuário
   useTokenRefresh();
@@ -114,7 +115,7 @@ export function AppLayout() {
           })}
           
           {/* Menu Admin */}
-          {isAdmin && (
+          {isAdmin && !isImpersonating && (
             <>
               <div className="my-2 border-t border-border pt-2">
                 <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
@@ -204,6 +205,7 @@ export function AppLayout() {
 
         {/* Page Content */}
         <main className="min-h-[calc(100vh-3.5rem)] bg-muted/30 p-4 lg:p-6">
+          <ImpersonationBanner />
           <Outlet />
         </main>
       </div>

@@ -12,11 +12,19 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isImpersonating, setIsImpersonating] = useState(false);
   const navigate = useNavigate();
 
   const checkAdminStatus = async (userId: string) => {
     try {
-      console.log('Checking admin status for user:', userId);
+      // Se estiver impersonando, não é admin na visão do sistema
+      const impersonating = localStorage.getItem('is_impersonating') === 'true';
+      if (impersonating) {
+        setIsAdmin(false);
+        setIsImpersonating(true);
+        return false;
+      }
+
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -24,12 +32,9 @@ export function useAuth() {
         .eq('role', 'admin')
         .maybeSingle();
       
-      console.log('Admin check result:', { data, error });
-      
       if (!error && data) {
         const isAdminUser = data.role === 'admin';
         setIsAdmin(isAdminUser);
-        console.log('User is admin:', isAdminUser);
         return isAdminUser;
       } else {
         setIsAdmin(false);
@@ -45,34 +50,52 @@ export function useAuth() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Verificar se está impersonando
+        const impersonating = localStorage.getItem('is_impersonating') === 'true';
+        
         // Pegar token da API externa
         const token = auth.getToken();
         
         if (!token) {
           setUser(null);
           setIsAdmin(false);
+          setIsImpersonating(false);
           setLoading(false);
           return;
         }
 
         // Decodificar token JWT para extrair dados do usuário
         const payload = JSON.parse(atob(token.split('.')[1]));
-        const userId = payload.id; // ID do usuário da API externa
-        const userEmail = payload.email;
+        
+        // Se estiver impersonando, usar dados do cliente impersonado
+        if (impersonating) {
+          const clientId = localStorage.getItem('impersonated_client_id');
+          const clientName = localStorage.getItem('impersonated_client_name');
+          
+          setUser({
+            id: clientId || payload.id,
+            email: clientName || payload.email
+          });
+          setIsAdmin(false);
+          setIsImpersonating(true);
+        } else {
+          // Caso contrário, usar dados do token
+          const userId = payload.id;
+          const userEmail = payload.email;
 
-        console.log('User from token:', { userId, userEmail });
+          setUser({
+            id: userId,
+            email: userEmail
+          });
 
-        setUser({
-          id: userId,
-          email: userEmail
-        });
-
-        // Verificar se é admin no Supabase usando o ID da API externa
-        await checkAdminStatus(userId);
+          // Verificar se é admin no Supabase
+          await checkAdminStatus(userId);
+        }
       } catch (error) {
         console.error('Erro ao verificar autenticação:', error);
         setUser(null);
         setIsAdmin(false);
+        setIsImpersonating(false);
       } finally {
         setLoading(false);
       }
@@ -92,6 +115,7 @@ export function useAuth() {
     user,
     session: null, // Mantido para compatibilidade
     isAdmin,
+    isImpersonating,
     loading,
     signOut
   };
