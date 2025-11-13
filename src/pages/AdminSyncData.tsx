@@ -369,22 +369,31 @@ export default function AdminSyncData() {
                     return (
                       <div
                         key={tableName}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                        className={`flex items-center justify-between p-4 border rounded-lg transition-all ${
+                          isSyncing 
+                            ? 'bg-primary/10 border-primary shadow-sm' 
+                            : 'hover:bg-accent/50'
+                        }`}
                       >
                         <div className="flex items-center gap-3 flex-1">
-                          <Database className="h-5 w-5 text-muted-foreground" />
+                          <Database className={`h-5 w-5 ${isSyncing ? 'text-primary' : 'text-muted-foreground'}`} />
                           <div className="flex flex-col">
-                            <span className="font-mono text-sm font-medium">{tableName}</span>
+                            <span className={`font-mono text-sm font-medium ${isSyncing ? 'text-primary' : ''}`}>
+                              {tableName}
+                            </span>
                             {isSynced && (
-                              <span className="text-xs text-muted-foreground">Mapeada</span>
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3" />
+                                Mapeada
+                              </span>
                             )}
                           </div>
                         </div>
                         <Button
                           onClick={() => handleSync(tableName)}
-                          disabled={loading || isSyncing}
+                          disabled={loading}
                           size="sm"
-                          variant={isSynced ? "default" : "outline"}
+                          variant={isSyncing ? "default" : (isSynced ? "secondary" : "outline")}
                         >
                           {isSyncing ? (
                             <>
@@ -471,16 +480,21 @@ export default function AdminSyncData() {
                         <TableCell className="text-right">
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant={syncingTable === table.name ? "default" : "outline"}
                             onClick={() => handleSync(table.name)}
                             disabled={loading}
                           >
-                            {loading ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
+                            {syncingTable === table.name ? (
+                              <>
+                                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                Sincronizando...
+                              </>
                             ) : (
-                              <RefreshCw className="h-3 w-3" />
+                              <>
+                                <RefreshCw className="mr-2 h-3 w-3" />
+                                Sincronizar
+                              </>
                             )}
-                            <span className="ml-2">Sincronizar</span>
                           </Button>
                         </TableCell>
                       </TableRow>
